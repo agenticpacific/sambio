@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biodiversity Survey Data Register - Registration Form</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  body { background-color: #f4f7f5; }
+  fieldset { background-color: #fff; }
+  .req { color: #dc3545; }
+  .site-block { background-color: #fbfdfb; }
+  .form-check-label { font-size: .92rem; }
+  .header-logo-mecc { max-height: 110px; width: auto; }
+  .header-logo-sambio { max-height: 104px; width: auto; }
+</style>
+</head>
+<body>
+
+<header class="bg-success text-white py-4">
+  <div class="container" style="max-width: 1100px;">
+    <div class="row align-items-center g-3">
+      <div class="col-6 col-md-3 order-1 text-center text-md-start">
+        <span class="d-inline-block bg-white rounded-3 p-3">
+          <img src="mecc.png" alt="Ministry of Environment and Climate Change logo" class="img-fluid header-logo-mecc">
+        </span>
+      </div>
+      <div class="col-12 col-md-6 order-3 order-md-2 text-center">
+        <h1>SAMBIO Project</h1>
+        <h2 class="fs-3 fw-semibold mb-1">Biodiversity Survey Data Register</h2>
+        <p class="lead mb-0 fs-6 opacity-75">Register a biodiversity survey report and its survey sites; backfill of existing reports and registration of new surveys</p>
+      </div>
+      <div class="col-6 col-md-3 order-2 order-md-3 text-center text-md-end">
+        <span class="d-inline-block bg-white rounded-3 p-3">
+          <img src="sambio.png" alt="SAMBIO logo" class="img-fluid header-logo-sambio">
+        </span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container py-4" style="max-width: 920px;">
+
+  <form id="register-form" class="needs-validation" novalidate action="https://formspree.io/f/xgawjkad" method="POST">
+
+    <input type="hidden" name="_subject" id="_subject" value="Biodiversity Data Register - New Registration">
+    <input type="text" name="_gotcha" class="d-none" tabindex="-1" autocomplete="off">
+
+    <fieldset class="border rounded-3 p-4 mb-4">
+      <legend class="float-none w-auto px-2 fs-5 fw-semibold text-success">1. Submitter details</legend>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="submitter_name" class="form-label">Full name <span class="req">*</span></label>
+          <input type="text" class="form-control" id="submitter_name" name="submitter_name" required>
+          <div class="invalid-feedback">Please enter your full name.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="organisation" class="form-label">Organisation <span class="req">*</span></label>
+          <input type="text" class="form-control" id="organisation" name="organisation" required placeholder="Ministry, NGO, university, community...">
+          <div class="invalid-feedback">Please enter your organisation.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="email" class="form-label">Email <span class="req">*</span></label>
+          <input type="email" class="form-control" id="email" name="email" required placeholder="you@example.org">
+          <div class="invalid-feedback">Please enter a valid email address.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="register_purpose" class="form-label">Registration purpose <span class="req">*</span></label>
+          <select class="form-select" id="register_purpose" name="register_purpose" required>
+            <option value="" disabled selected>Select...</option>
+            <option value="backfill">Backfill of an existing report</option>
+            <option value="new">New / recent survey</option>
+          </select>
+          <div class="invalid-feedback">Please select a registration purpose.</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="border rounded-3 p-4 mb-4">
+      <legend class="float-none w-auto px-2 fs-5 fw-semibold text-success">2. Report / survey metadata</legend>
+      <div class="row g-3">
+        <div class="col-12">
+          <label for="report_title" class="form-label">Report title <span class="req">*</span></label>
+          <input type="text" class="form-control" id="report_title" name="report_title" required>
+          <div class="invalid-feedback">Please enter the report title.</div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <label for="publication_year" class="form-label">Publication year <span class="req">*</span></label>
+          <input type="number" class="form-control" id="publication_year" name="publication_year" min="1900" max="2100" step="1" required>
+          <div class="invalid-feedback">Please enter the publication year.</div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <label for="survey_year" class="form-label">Survey year(s) <span class="req">*</span></label>
+          <input type="text" class="form-control" id="survey_year" name="survey_year" required placeholder="e.g. 2012 or 2017-2018">
+          <div class="invalid-feedback">Please enter the survey year(s).</div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <label for="survey_dates" class="form-label">Fieldwork start / end dates</label>
+          <input type="text" class="form-control" id="survey_dates" name="survey_dates" placeholder="e.g. 17-28 September 2012">
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <label for="survey_type" class="form-label">Survey type <span class="req">*</span></label>
+          <select class="form-select" id="survey_type" name="survey_type" required>
+            <option value="" disabled selected>Select...</option>
+            <option value="baseline">Baseline assessment</option>
+            <option value="reassessment">Reassessment</option>
+            <option value="monitoring">Long-term monitoring</option>
+          </select>
+          <div class="invalid-feedback">Please select a survey type.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="project_name" class="form-label">Project name</label>
+          <input type="text" class="form-control" id="project_name" name="project_name" placeholder="e.g. FPAM, MESCAL, CEPF, Ridge to Reef">
+        </div>
+        <div class="col-md-6">
+          <label for="donors" class="form-label">Donor / funder(s)</label>
+          <input type="text" class="form-control" id="donors" name="donors" placeholder="e.g. GEF, FAO, IUCN, CEPF (comma-separated)">
+        </div>
+        <div class="col-md-6">
+          <label for="lead_agency" class="form-label">Lead agency <span class="req">*</span></label>
+          <input type="text" class="form-control" id="lead_agency" name="lead_agency" required placeholder="e.g. IAS-USP, Conservation International">
+          <div class="invalid-feedback">Please enter the lead agency.</div>
+        </div>
+        <div class="col-md-6">
+          <label for="report_id" class="form-label">Report identifier</label>
+          <input type="text" class="form-control" id="report_id" name="report_id" placeholder="e.g. FPAM-2014-BIODIVERSITY-01, ISBN, RAP Bulletin 57">
+        </div>
+        <div class="col-12">
+          <label for="partner_agencies" class="form-label">Partner agencies / communities involved</label>
+          <textarea class="form-control" id="partner_agencies" name="partner_agencies" rows="3" placeholder="Ministries, NGOs, universities, provincial councils, villages..."></textarea>
+        </div>
+        <div class="col-md-6">
+          <label for="authors_editors" class="form-label">Authors / editors</label>
+          <input type="text" class="form-control" id="authors_editors" name="authors_editors">
+        </div>
+        <div class="col-md-6">
+          <label for="report_link" class="form-label">Link to report or dataset</label>
+          <input type="url" class="form-control" id="report_link" name="report_link" placeholder="https://...">
+          <div class="invalid-feedback">Please enter a valid URL.</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="border rounded-3 p-4 mb-4">
+      <legend class="float-none w-auto px-2 fs-5 fw-semibold text-success">3. Geographic coverage</legend>
+      <p class="form-text mb-2">Island(s) covered by the survey</p>
+      <div class="row g-2">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="islands[]" value="Viti Levu" id="isl-vitilevu"><label class="form-check-label" for="isl-vitilevu">Viti Levu</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="islands[]" value="Vanua Levu" id="isl-vanualevu"><label class="form-check-label" for="isl-vanualevu">Vanua Levu</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="islands[]" value="Taveuni" id="isl-taveuni"><label class="form-check-label" for="isl-taveuni">Taveuni</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="islands[]" value="Rabi" id="isl-rabi"><label class="form-check-label" for="isl-rabi">Rabi</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="islands[]" value="Kadavu" id="isl-kadavu"><label class="form-check-label" for="isl-kadavu">Kadavu</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="islands[]" value="Lau Group" id="isl-lau"><label class="form-check-label" for="isl-lau">Lau Group</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="islands[]" value="Lomaiviti Group" id="isl-lomaiviti"><label class="form-check-label" for="isl-lomaiviti">Lomaiviti Group</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="islands[]" value="Rotuma" id="isl-rotuma"><label class="form-check-label" for="isl-rotuma">Rotuma</label></div></div>
+      </div>
+      <div class="mt-3">
+        <label for="islands_other" class="form-label">Other island(s)</label>
+        <input type="text" class="form-control" id="islands_other" name="islands_other">
+      </div>
+
+      <p class="form-text mb-2 mt-4">Province(s) covered by the survey</p>
+      <div class="row g-2">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Ba" id="pr-ba"><label class="form-check-label" for="pr-ba">Ba</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Bua" id="pr-bua"><label class="form-check-label" for="pr-bua">Bua</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Cakaudrove" id="pr-cakaudrove"><label class="form-check-label" for="pr-cakaudrove">Cakaudrove</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Kadavu" id="pr-kadavu"><label class="form-check-label" for="pr-kadavu">Kadavu</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Lau" id="pr-lau"><label class="form-check-label" for="pr-lau">Lau</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Lomaiviti" id="pr-lomaiviti"><label class="form-check-label" for="pr-lomaiviti">Lomaiviti</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Macuata" id="pr-macuata"><label class="form-check-label" for="pr-macuata">Macuata</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Nadroga-Navosa" id="pr-nadroga"><label class="form-check-label" for="pr-nadroga">Nadroga-Navosa</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Naitasiri" id="pr-naitasiri"><label class="form-check-label" for="pr-naitasiri">Naitasiri</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Namosi" id="pr-namosi"><label class="form-check-label" for="pr-namosi">Namosi</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Ra" id="pr-ra"><label class="form-check-label" for="pr-ra">Ra</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Rewa" id="pr-rewa"><label class="form-check-label" for="pr-rewa">Rewa</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Serua" id="pr-serua"><label class="form-check-label" for="pr-serua">Serua</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="provinces[]" value="Tailevu" id="pr-tailevu"><label class="form-check-label" for="pr-tailevu">Tailevu</label></div></div>
+      </div>
+      <div class="mt-3">
+        <label for="provinces_other" class="form-label">Other province(s)</label>
+        <input type="text" class="form-control" id="provinces_other" name="provinces_other">
+      </div>
+    </fieldset>
+
+    <fieldset class="border rounded-3 p-4 mb-4">
+      <legend class="float-none w-auto px-2 fs-5 fw-semibold text-success">4. Site types, taxa and methods surveyed</legend>
+      <p class="form-text mb-2">Ecosystem / site type(s) covered</p>
+      <div class="row g-2">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Coastal/littoral forest" id="eco-coastal"><label class="form-check-label" for="eco-coastal">Coastal / littoral forest</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Lowland rainforest" id="eco-lowland"><label class="form-check-label" for="eco-lowland">Lowland rainforest</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Upland rainforest" id="eco-upland"><label class="form-check-label" for="eco-upland">Upland rainforest</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Cloud forest" id="eco-cloud"><label class="form-check-label" for="eco-cloud">Cloud forest</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Dry forest" id="eco-dry"><label class="form-check-label" for="eco-dry">Dry forest</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Talasiga grassland" id="eco-talasiga"><label class="form-check-label" for="eco-talasiga">Talasiga grassland</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Freshwater river/stream" id="eco-river"><label class="form-check-label" for="eco-river">Freshwater river / stream</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Freshwater wetland" id="eco-wetland"><label class="form-check-label" for="eco-wetland">Freshwater wetland</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Mangrove" id="eco-mangrove"><label class="form-check-label" for="eco-mangrove">Mangrove</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Coral reef" id="eco-reef"><label class="form-check-label" for="eco-reef">Coral reef</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Lagoon/patch reef" id="eco-lagoon"><label class="form-check-label" for="eco-lagoon">Lagoon / patch reef</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Seagrass" id="eco-seagrass"><label class="form-check-label" for="eco-seagrass">Seagrass</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="ecosystems[]" value="Intertidal/mudflat" id="eco-mudflat"><label class="form-check-label" for="eco-mudflat">Intertidal / mudflat</label></div></div>
+      </div>
+      <div class="mt-3">
+        <label for="ecosystems_other" class="form-label">Other ecosystem / site type</label>
+        <input type="text" class="form-control" id="ecosystems_other" name="ecosystems_other">
+      </div>
+
+      <p class="form-text mb-2 mt-4">Taxa / categories surveyed</p>
+      <div class="row g-2">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Flora (vascular plants)" id="tx-flora"><label class="form-check-label" for="tx-flora">Flora (vascular plants)</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Bryophytes" id="tx-bryo"><label class="form-check-label" for="tx-bryo">Bryophytes</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Avifauna" id="tx-avifauna"><label class="form-check-label" for="tx-avifauna">Avifauna</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Herpetofauna" id="tx-herp"><label class="form-check-label" for="tx-herp">Herpetofauna</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Freshwater fish" id="tx-fwfish"><label class="form-check-label" for="tx-fwfish">Freshwater fish</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Marine fish" id="tx-mfish"><label class="form-check-label" for="tx-mfish">Marine fish</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Terrestrial insects" id="tx-insects"><label class="form-check-label" for="tx-insects">Terrestrial insects</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Freshwater macroinvertebrates" id="tx-bmi"><label class="form-check-label" for="tx-bmi">Freshwater macroinvertebrates</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Marine invertebrates" id="tx-minv"><label class="form-check-label" for="tx-minv">Marine invertebrates</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Corals" id="tx-corals"><label class="form-check-label" for="tx-corals">Corals</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Mammals/bats" id="tx-mammals"><label class="form-check-label" for="tx-mammals">Mammals / bats</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Invasive species" id="tx-invasives"><label class="form-check-label" for="tx-invasives">Invasive species</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Archaeology/cultural heritage" id="tx-archaeo"><label class="form-check-label" for="tx-archaeo">Archaeology / cultural heritage</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="taxa[]" value="Socio-economic" id="tx-socio"><label class="form-check-label" for="tx-socio">Socio-economic</label></div></div>
+      </div>
+      <div class="mt-3">
+        <label for="taxa_other" class="form-label">Other taxa / category</label>
+        <input type="text" class="form-control" id="taxa_other" name="taxa_other">
+      </div>
+
+      <p class="form-text mb-2 mt-4">Sampling methods used</p>
+      <div class="row g-2">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Vegetation plots/transects" id="mt-plots"><label class="form-check-label" for="mt-plots">Vegetation plots / transects</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Bird point counts" id="mt-pointcount"><label class="form-check-label" for="mt-pointcount">Bird point counts</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Sticky traps" id="mt-sticky"><label class="form-check-label" for="mt-sticky">Sticky traps</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Mist nets/harp traps" id="mt-mistnets"><label class="form-check-label" for="mt-mistnets">Mist nets / harp traps</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Electrofishing" id="mt-electro"><label class="form-check-label" for="mt-electro">Electrofishing</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Seine/gill/fyke nets" id="mt-nets"><label class="form-check-label" for="mt-nets">Seine / gill / fyke nets</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Kick-net/Surber sampling" id="mt-kicknet"><label class="form-check-label" for="mt-kicknet">Kick-net / Surber sampling</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Leaf-litter/Winkler" id="mt-litter"><label class="form-check-label" for="mt-litter">Leaf-litter / Winkler</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Light traps" id="mt-light"><label class="form-check-label" for="mt-light">Light traps</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Malaise traps" id="mt-malaise"><label class="form-check-label" for="mt-malaise">Malaise traps</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Belt transects (reef)" id="mt-belt"><label class="form-check-label" for="mt-belt">Belt transects (reef)</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Point-intercept transects" id="mt-pit"><label class="form-check-label" for="mt-pit">Point-intercept transects</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Roving diver surveys" id="mt-roving"><label class="form-check-label" for="mt-roving">Roving diver surveys</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Water quality sampling" id="mt-water"><label class="form-check-label" for="mt-water">Water quality sampling</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Household survey" id="mt-household"><label class="form-check-label" for="mt-household">Household survey</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Key informant interviews" id="mt-kii"><label class="form-check-label" for="mt-kii">Key informant interviews</label></div></div>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="methods[]" value="Focus group discussions" id="mt-fgd"><label class="form-check-label" for="mt-fgd">Focus group discussions</label></div></div>
+      </div>
+      <div class="mt-3">
+        <label for="methods_other" class="form-label">Other method(s)</label>
+        <input type="text" class="form-control" id="methods_other" name="methods_other">
+      </div>
+
+      <div class="mt-4">
+        <label for="gps_convention" class="form-label">GPS / coordinate convention used</label>
+        <select class="form-select" id="gps_convention" name="gps_convention">
+          <option value="" selected>Not recorded / unknown</option>
+          <option value="WGS84 decimal degrees">WGS84 decimal degrees</option>
+          <option value="WGS84 DMS">WGS84 degrees-minutes-seconds</option>
+          <option value="Fiji 1986">Fiji 1986 datum</option>
+          <option value="Fiji map grid">Fiji map grid coordinates</option>
+          <option value="Mixed">Mixed conventions</option>
+          <option value="None">No GPS recorded</option>
+        </select>
+      </div>
+    </fieldset>
+
+    <fieldset class="border rounded-3 p-4 mb-4">
+      <legend class="float-none w-auto px-2 fs-5 fw-semibold text-success">5. Survey sites</legend>
+      <p class="form-text mb-3">Add one block per survey site (transect, plot, station, reef site...). Add as many as needed.</p>
+      <div id="sites-container"></div>
+      <button type="button" class="btn btn-outline-success btn-sm" id="add-site">+ Add survey site</button>
+    </fieldset>
+
+    <template id="site-template">
+      <div class="site-block border border-start border-success border-4 rounded-3 p-3 p-md-4 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="fs-6 fw-semibold text-success mb-0 site-title">Survey site</h3>
+          <button type="button" class="btn btn-outline-danger btn-sm site-remove">Remove</button>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Site name <span class="req">*</span></label>
+            <input type="text" class="form-control" name="sites[i][name]" required>
+            <div class="invalid-feedback">Please enter a site name.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Site code</label>
+            <input type="text" class="form-control" name="sites[i][code]" placeholder="e.g. FW1, YAC01, T1P1">
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label">Latitude</label>
+            <input type="number" class="form-control" name="sites[i][lat]" step="any" min="-90" max="90" placeholder="-17.9056">
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label">Longitude</label>
+            <input type="number" class="form-control" name="sites[i][lon]" step="any" min="-180" max="180" placeholder="178.2225">
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label">Island</label>
+            <input type="text" class="form-control" name="sites[i][island]">
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label">Province</label>
+            <select class="form-select" name="sites[i][province]">
+              <option value="" selected></option>
+              <option>Ba</option>
+              <option>Bua</option>
+              <option>Cakaudrove</option>
+              <option>Kadavu</option>
+              <option>Lau</option>
+              <option>Lomaiviti</option>
+              <option>Macuata</option>
+              <option>Nadroga-Navosa</option>
+              <option>Naitasiri</option>
+              <option>Namosi</option>
+              <option>Ra</option>
+              <option>Rewa</option>
+              <option>Serua</option>
+              <option>Tailevu</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">District (tikina)</label>
+            <input type="text" class="form-control" name="sites[i][district]">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Village / locality</label>
+            <input type="text" class="form-control" name="sites[i][village]">
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label">Elevation (m) / depth (m)</label>
+            <input type="number" class="form-control" name="sites[i][elevation]" step="any" placeholder="e.g. 133 (elev.) or -12 (depth)">
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label">Habitat type</label>
+            <select class="form-select" name="sites[i][habitat]">
+              <option value="" selected></option>
+              <option>Coastal/littoral forest</option>
+              <option>Lowland rainforest</option>
+              <option>Upland rainforest</option>
+              <option>Cloud forest</option>
+              <option>Dry forest</option>
+              <option>Talasiga grassland</option>
+              <option>Freshwater river/stream</option>
+              <option>Freshwater wetland</option>
+              <option>Mangrove</option>
+              <option>Fore reef slope</option>
+              <option>Lagoon / patch reef</option>
+              <option>Seagrass</option>
+              <option>Intertidal/mudflat</option>
+            </select>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <label class="form-label">Survey date</label>
+            <input type="text" class="form-control" name="sites[i][date]" placeholder="e.g. 05 Oct 2017 or 05/10/2017">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Method and effort</label>
+            <input type="text" class="form-control" name="sites[i][method]" placeholder="e.g. 3 x 50 m belt transects; 10 x 10 m plots along 100 m transect">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" name="sites[i][notes]" rows="2" placeholder="Any other details about this site"></textarea>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <div class="d-grid gap-2 col-sm-6 mx-auto mb-3">
+      <button type="submit" class="btn btn-success btn-lg">Submit registration</button>
+    </div>
+    <div class="alert alert-danger d-none" id="form-message" role="alert"></div>
+  </form>
+</main>
+
+<footer class="text-center text-muted small py-4">
+  Biodiversity Survey Data Register, Ministry of Climate Change and Environment, Government of Fiji.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function () {
+    var container = document.getElementById('sites-container');
+    var template = document.getElementById('site-template');
+    var siteCount = 0;
+
+    function updateTitles() {
+      var blocks = container.querySelectorAll('.site-block');
+      blocks.forEach(function (block, idx) {
+        var t = block.querySelector('.site-title');
+        if (t) t.textContent = 'Survey site ' + (idx + 1);
+      });
+    }
+
+    function addSite() {
+      var clone = template.content.cloneNode(true);
+      clone.querySelectorAll('[name]').forEach(function (el) {
+        el.name = el.name.replace('[i]', '[' + siteCount + ']');
+      });
+      container.appendChild(clone);
+      siteCount += 1;
+      updateTitles();
+    }
+
+    container.addEventListener('click', function (e) {
+      if (e.target.classList.contains('site-remove')) {
+        e.target.closest('.site-block').remove();
+        updateTitles();
+      }
+    });
+
+    document.getElementById('add-site').addEventListener('click', addSite);
+
+    var form = document.getElementById('register-form');
+    var message = document.getElementById('form-message');
+
+    function setSubject() {
+      var title = (document.getElementById('report_title').value || 'Untitled survey').trim();
+      var year = document.getElementById('survey_year').value || '';
+      document.getElementById('_subject').value =
+        'Biodiversity Data Register - ' + title + (year ? ' (' + year + ')' : '');
+    }
+    document.getElementById('report_title').addEventListener('input', setSubject);
+    document.getElementById('survey_year').addEventListener('input', setSubject);
+
+    form.addEventListener('submit', function (e) {
+      if (siteCount === 0) {
+        e.preventDefault();
+        message.textContent = 'Please add at least one survey site in Section 5.';
+        message.classList.remove('d-none');
+        document.getElementById('add-site').focus();
+        return;
+      }
+      if (!form.checkValidity()) {
+        e.preventDefault();
+        e.stopPropagation();
+        message.classList.add('d-none');
+      } else {
+        setSubject();
+      }
+      form.classList.add('was-validated');
+    });
+
+    addSite();
+  })();
+</script>
+
+</body>
+</html>
