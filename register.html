@@ -357,14 +357,22 @@
             <input type="text" class="form-control" name="sites[i][date]" placeholder="e.g. 05 Oct 2017 or 05/10/2017">
           </div>
           <div class="col-12">
-            <label class="form-label">Method and effort</label>
-            <input type="text" class="form-control" name="sites[i][method]" placeholder="e.g. 3 x 50 m belt transects; 10 x 10 m plots along 100 m transect">
+            <label class="form-label">Methods and effort</label>
+            <div class="site-methods" data-method-count="0"></div>
+            <button type="button" class="btn btn-outline-success btn-sm add-method">+ Add method / effort</button>
           </div>
           <div class="col-12">
             <label class="form-label">Notes</label>
             <textarea class="form-control" name="sites[i][notes]" rows="2" placeholder="Any other details about this site"></textarea>
           </div>
         </div>
+      </div>
+    </template>
+
+    <template id="method-template">
+      <div class="method-entry input-group input-group-sm mb-2">
+        <input type="text" class="form-control" name="sites[i][methods][j]" placeholder="e.g. 3 x 50 m belt transects; 10 x 10 m plots along 100 m transect">
+        <button type="button" class="btn btn-outline-danger method-remove" aria-label="Remove method / effort">&times;</button>
       </div>
     </template>
 
@@ -384,6 +392,7 @@
   (function () {
     var container = document.getElementById('sites-container');
     var template = document.getElementById('site-template');
+    var methodTemplate = document.getElementById('method-template');
     var siteCount = 0;
 
     function updateTitles() {
@@ -394,12 +403,36 @@
       });
     }
 
+    function addMethod(block) {
+      var wrap = block.querySelector('.site-methods');
+      var count = parseInt(wrap.dataset.methodCount, 10) || 0;
+      var entry = methodTemplate.content.cloneNode(true);
+      var siteIdx = block.dataset.siteIndex;
+      entry.querySelectorAll('[name]').forEach(function (el) {
+        el.name = el.name.replace('[i]', '[' + siteIdx + ']').replace('[j]', '[' + count + ']');
+      });
+      wrap.appendChild(entry);
+      wrap.dataset.methodCount = count + 1;
+    }
+
+    function reindexMethods(block) {
+      var wrap = block.querySelector('.site-methods');
+      var siteIdx = block.dataset.siteIndex;
+      wrap.querySelectorAll('.method-entry [name]').forEach(function (el, idx) {
+        el.name = 'sites[' + siteIdx + '][methods][' + idx + ']';
+      });
+      wrap.dataset.methodCount = wrap.querySelectorAll('.method-entry').length;
+    }
+
     function addSite() {
       var clone = template.content.cloneNode(true);
       clone.querySelectorAll('[name]').forEach(function (el) {
         el.name = el.name.replace('[i]', '[' + siteCount + ']');
       });
       container.appendChild(clone);
+      var block = container.lastElementChild;
+      block.dataset.siteIndex = siteCount;
+      addMethod(block);
       siteCount += 1;
       updateTitles();
     }
@@ -408,6 +441,15 @@
       if (e.target.classList.contains('site-remove')) {
         e.target.closest('.site-block').remove();
         updateTitles();
+        return;
+      }
+      if (e.target.classList.contains('add-method')) {
+        addMethod(e.target.closest('.site-block'));
+        return;
+      }
+      if (e.target.classList.contains('method-remove')) {
+        e.target.closest('.method-entry').remove();
+        reindexMethods(e.target.closest('.site-block'));
       }
     });
 
