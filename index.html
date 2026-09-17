@@ -1,3 +1,1042 @@
-<h1>SAMBIO Project</h1>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAMBIO Data Stocktake &mdash; Fiji</title>
+<link rel="icon" href="https://agenticpacific.com.fj/sambio/sambio.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+<style>
+:root{
+  --bg:#f4f6f8; --panel:#ffffff; --ink:#10212b; --muted:#5d7383; --line:#dde5ea;
+  --accent:#0b7285; --accent-soft:#e3f2f5; --marine:#1c7ed6; --terrestrial:#2f9e44;
+  --freshwater:#0ca678; --cross:#868e96; --shadow:0 1px 2px rgba(16,33,43,.06),0 4px 16px rgba(16,33,43,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+a{color:var(--accent)}
+.wrap{max-width:1680px;margin:0 auto;padding:0 20px 56px}
 
-<h3>Safeguarding Marine & Terrestrial Biodiversity in Fiji</h3>
+header.top{background:linear-gradient(135deg,#0b7285,#0c5c6b 55%,#11405c);color:#fff;padding:26px 0 22px;margin-bottom:20px}
+header.top .wrap{padding-bottom:0}
+header.top h1{font-size:clamp(24px,3.1vw,34px);line-height:1.15;letter-spacing:-.4px}
+header.top p{margin:6px 0 0;color:#bfe3ea;max-width:900px;font-size:13px}
+.brand{display:flex;align-items:flex-start;gap:18px}
+.brand-text{min-width:0}
+/* The supplied artwork is opaque white, so it sits on its own light chip
+   rather than directly on the header gradient. */
+.logo{
+  flex:none;width:124px;height:auto;border-radius:16px;background:#fff;
+  padding:8px;box-shadow:0 2px 10px rgba(0,0,0,.22)
+}
+@media (max-width:640px){.brand{gap:12px}.logo{width:78px}}
+.meta{margin-top:12px;display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:#9fd2dc}
+.meta b{color:#fff;font-weight:600}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .v{font-size:25px;font-weight:680;letter-spacing:-.02em;line-height:1.15}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:3px}
+.kpi .s{font-size:11px;color:var(--muted);margin-top:5px}
+
+.toolbar{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:16px;box-shadow:var(--shadow)}
+.toolbar .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toolbar input[type=search]{
+  flex:1 1 280px;min-width:220px;padding:8px 11px;border:1px solid var(--line);
+  border-radius:7px;font-size:13px;background:#fbfcfd;color:var(--ink)
+}
+.toolbar input[type=search]:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+button{font:inherit;cursor:pointer;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 12px}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#095e6e;color:#fff}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft);color:#08606f;
+  border:1px solid #bfe0e6;border-radius:999px;padding:3px 7px 3px 11px;font-size:12px}
+.chip b{font-weight:600}
+.chip button{border:0;background:transparent;padding:0 4px;color:#08606f;font-size:15px;line-height:1}
+.chip button:hover{color:#c92a2a}
+.hint{color:var(--muted);font-size:12px}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px 10px;box-shadow:var(--shadow);min-width:0}
+.card h3{font-size:13px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.card h3 .sub{font-weight:400;color:var(--muted);font-size:11px}
+.card .body{margin-top:8px}
+.span3{grid-column:span 3}.span4{grid-column:span 4}.span5{grid-column:span 5}
+.span6{grid-column:span 6}.span7{grid-column:span 7}.span8{grid-column:span 8}.span12{grid-column:span 12}
+@media(max-width:1200px){.span3,.span4,.span5{grid-column:span 6}.span7,.span8{grid-column:span 12}}
+@media(max-width:820px){.grid>*{grid-column:span 12 !important}}
+
+svg{display:block;width:100%;overflow:visible}
+.bar{cursor:pointer}
+.bar rect.track{fill:#f0f4f6}
+.bar rect.value{fill:var(--accent);transition:fill .12s}
+.bar:hover rect.value{fill:#0a5f6e}
+.bar.on rect.value{fill:#e8590c}
+.bar text.lab{font-size:11.5px;fill:var(--ink)}
+.bar text.num{font-size:11px;fill:var(--muted);font-variant-numeric:tabular-nums}
+.bar.on text.lab{font-weight:650}
+.axis text{font-size:10.5px;fill:var(--muted)}
+.axis path,.axis line{stroke:#e4ebef}
+.tip{position:fixed;pointer-events:none;z-index:9999;background:#10212b;color:#fff;padding:6px 9px;
+  border-radius:6px;font-size:12px;opacity:0;transition:opacity .1s;max-width:320px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+
+.selects{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fbfcfd;color:var(--ink)}
+select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+
+#map{height:560px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.maplibregl-popup-content{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:12px 14px;border-radius:9px;max-width:300px}
+.maplibregl-popup-content h4{margin:0 0 6px;font-size:13.5px}
+.maplibregl-popup-content dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px}
+.maplibregl-popup-content dt{color:var(--muted)}
+.maplibregl-popup-content dd{margin:0}
+.map-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+.map-ctl label{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em;padding:7px 9px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+td{padding:8px 9px;border-bottom:1px solid #eef3f5;vertical-align:top}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#f7fafb}
+.twrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.pill.marine{background:#e7f2fd;color:#1558a8}
+.pill.terrestrial{background:#e8f6ea;color:#26702f}
+.pill.freshwater{background:#e2f7f1;color:#0a7c5d}
+.pill.cross-cutting{background:#eef1f3;color:#5d6b75}
+.muted{color:var(--muted)}
+.nowrap{white-space:nowrap}
+
+#drawer{position:fixed;top:0;right:0;width:min(520px,94vw);height:100%;background:#fff;z-index:1000;
+  box-shadow:-10px 0 40px rgba(16,33,43,.18);transform:translateX(100%);transition:transform .22s ease;
+  overflow:auto;padding:22px 24px 60px}
+#drawer.open{transform:translateX(0)}
+#drawer h2{font-size:17px;padding-right:36px;line-height:1.3}
+#drawer .close{position:absolute;top:14px;right:16px;border:0;background:#f0f4f6;border-radius:50%;
+  width:30px;height:30px;font-size:17px;line-height:1;color:var(--muted)}
+#drawer dl{display:grid;grid-template-columns:132px 1fr;gap:7px 14px;margin:16px 0;font-size:13px}
+#drawer dt{color:var(--muted);font-size:12px}
+#drawer dd{margin:0;word-break:break-word}
+#drawer .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+#drawer .tag{background:#eef3f5;border-radius:5px;padding:2px 7px;font-size:11.5px;color:#3d5563}
+#scrim{position:fixed;inset:0;background:rgba(16,33,43,.3);z-index:999;opacity:0;pointer-events:none;transition:opacity .22s}
+#scrim.open{opacity:1;pointer-events:auto}
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap brand">
+    <img class="logo" src="https://agenticpacific.com.fj/sambio/sambio.png"
+         alt="SAMBIO Fiji" width="260" height="280"
+         onerror="this.remove()">
+    <div class="brand-text">
+      <h1 style="margin-top: 10px">SAMBIO Public Data and Records Master-Sheet</h1>
+      <p>Safeguarding Marine &amp; Terrestrial Biodiversity in Fiji. A consolidated catalogue of environment
+         and biodiversity public data holdings, de-duplicated across platforms, screened for relevance to SAMBIO,
+         classified by thematic area and reverse geocoded to Fijian provinces, islands and villages.</p>
+      <div class="meta" id="hdr-meta"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="boot" class="loading">Loading master sheet&hellip;</div>
+
+  <div id="app" hidden>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="toolbar">
+      <div class="row">
+        <input type="search" id="q" placeholder="Search titles, descriptions, publishers, keywords, place names&hellip;" autocomplete="off">
+        <button id="reset">Reset all filters</button>
+        <span class="hint" id="count-hint"></span>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="grid">
+      <div class="card span4">
+        <h3>Data source <span class="sub">click to filter</span></h3>
+        <div class="body"><svg id="c-source"></svg></div>
+      </div>
+      <div class="card span3">
+        <h3>Realm <span class="sub">marine / terrestrial</span></h3>
+        <div class="body"><svg id="c-realm"></svg></div>
+        <div class="legend" id="l-realm"></div>
+      </div>
+      <div class="card span5">
+        <h3>Thematic area <span class="sub">click to filter</span></h3>
+        <div class="body"><svg id="c-theme"></svg></div>
+      </div>
+
+      <div class="card span5">
+        <h3>Data type <span class="sub">click to filter</span></h3>
+        <div class="body"><svg id="c-dtype"></svg></div>
+      </div>
+      <div class="card span7">
+        <h3>Temporal coverage <span class="sub">drag to select a period &middot; double-click to clear</span></h3>
+        <div class="body"><svg id="c-year"></svg></div>
+      </div>
+
+      <div class="card span5">
+        <h3>
+          <span>Geographic focus</span>
+          <span class="sub">
+            <select id="geo-level">
+              <option value="province_focus">Province (sub-national records)</option>
+              <option value="province">Province (all records)</option>
+              <option value="island">Island</option>
+              <option value="village">Village</option>
+            </select>
+          </span>
+        </h3>
+        <div class="body"><svg id="c-geo"></svg></div>
+      </div>
+      <div class="card span7">
+        <h3>
+          <span>Field explorer</span>
+          <span class="sub">break the filtered catalogue down by any field</span>
+        </h3>
+        <div class="body">
+          <div class="selects">
+            <select id="explore-field"></select>
+            <select id="explore-top">
+              <option value="10">Top 10</option>
+              <option value="15" selected>Top 15</option>
+              <option value="25">Top 25</option>
+              <option value="50">Top 50</option>
+            </select>
+          </div>
+          <svg id="c-explore"></svg>
+        </div>
+      </div>
+
+      <div class="card span12">
+        <h3>
+          <span>Cross-tabulation</span>
+          <span class="sub">
+            <select id="x-field"></select> &times; <select id="y-field"></select>
+            &nbsp;<span class="hint">click a cell to filter on both</span>
+          </span>
+        </h3>
+        <div class="body"><svg id="c-cross"></svg></div>
+      </div>
+
+      <div class="card span12">
+        <h3>
+          <span>Protected areas &mdash; WDPA Fiji</span>
+          <span class="sub" id="map-sub"></span>
+        </h3>
+        <div class="body">
+          <div class="map-ctl">
+            <label><input type="checkbox" id="pa-labels" checked> Protected area labels</label>
+            <label><input type="checkbox" id="rec-points" checked> Filtered dataset locations</label>
+            <button id="fit">Zoom to Fiji</button>
+          </div>
+          <div id="map"></div>
+          <div class="legend" id="l-desig"></div>
+        </div>
+      </div>
+
+      <div class="card span12">
+        <h3><span>Catalogue records</span><span class="sub" id="tbl-sub"></span></h3>
+        <div class="body">
+          <div class="twrap">
+            <table>
+              <thead><tr>
+                <th style="width:34%">Title</th><th>Source</th><th>Realm</th>
+                <th>Thematic area</th><th>Location</th><th class="nowrap">Updated</th>
+              </tr></thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer id="foot"></footer>
+  </div>
+</div>
+
+<div id="scrim"></div>
+<aside id="drawer" aria-hidden="true"><button class="close" id="drawer-close">&times;</button><div id="drawer-body"></div></aside>
+<div class="tip" id="tip"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ config */
+
+const MASTERSHEET = "mastersheet.json";
+const PA_LAYER = "fj-pa-master.geojson";
+
+// Fiji in the continuous Pacific frame the protected area layer uses.
+const FIJI_BOUNDS = [[176.6, -21.2], [181.6, -12.2]];
+
+const REALM_COLOR = {
+  marine: "#1c7ed6", terrestrial: "#2f9e44",
+  freshwater: "#0ca678", "cross-cutting": "#adb5bd"
+};
+
+// Designation palette: marine designations in blues, terrestrial in greens,
+// freshwater and built assets in teals/ambers, so the map reads thematically.
+const DESIG_COLOR = {
+  "Locally Managed Marine Area": "#1c7ed6",
+  "Nature Reserve and Marine Reserve": "#4dabf7",
+  "Wetland of International Importance (Ramsar Site)": "#0ca678",
+  "Water Dam": "#20c997",
+  "Forest Reserve": "#2f9e44",
+  "Forest Park": "#69db7c",
+  "Nature Reserve": "#37b24d",
+  "National Park": "#087f5b",
+  "Conservation Reserve": "#94d82d",
+  "Private Freehold Land": "#f59f00",
+  "Iguana Sanctuary": "#e8590c",
+  "Heritage Park": "#ae3ec9",
+  "Recreation Reserve": "#f06595"
+};
+const DESIG_FALLBACK = "#868e96";
+
+/* Every filterable/groupable field, with its accessor. */
+const FIELDS = {
+  source:         { label: "Data source",       get: r => [r.source_short] },
+  record_type:    { label: "Record type",       get: r => [r.record_type === "protected_area" ? "Protected area" : "Dataset"] },
+  realm:          { label: "Realm",             get: r => r.realms || [] },
+  primary_realm:  { label: "Primary realm",     get: r => [r.primary_realm] },
+  theme:          { label: "Thematic area",     get: r => r.themes || [] },
+  data_type:      { label: "Data type",         get: r => r.data_types || [] },
+  format:         { label: "Distribution format", get: r => (r.formats || []).map(f => f.toUpperCase()) },
+  publisher:      { label: "Publisher",         get: r => r.publisher ? [r.publisher] : [] },
+  license:        { label: "Licence",           get: r => r.license ? [r.license] : [] },
+  scope:          { label: "Geographic scope",  get: r => [r.scope] },
+  coverage:       { label: "Coverage level",    get: r => [r.location.coverage] },
+  geocode_method: { label: "Geocoding method",  get: r => [r.location.method] },
+  province:       { label: "Province",          get: r => r.location.provinces || [] },
+  island:         { label: "Island",            get: r => r.location.islands || [] },
+  village:        { label: "Village",           get: r => r.location.villages || [] },
+  keyword:        { label: "Keyword",           get: r => r.keywords || [] },
+  relevance:      { label: "SAMBIO relevance",  get: r => [r.relevance === "core" ? "Core" : "Supporting"] },
+  access_level:   { label: "Access level",      get: r => r.access_level ? [r.access_level] : [] }
+};
+// Province tallies computed over sub-national records only.
+const VIRTUAL_FIELDS = {
+  province_focus: { label: "Province (focus)", base: "province",
+                    get: r => r.location.coverage === "subnational" ? (r.location.provinces || []) : [] }
+};
+
+/* ------------------------------------------------------------------- state */
+
+const state = {
+  data: null,
+  records: [],
+  filtered: [],
+  filters: {},            // field -> Set(values)
+  years: null,            // [from, to]
+  search: null,
+  map: null,
+  mapReady: false
+};
+Object.keys(FIELDS).forEach(k => state.filters[k] = new Set());
+
+const tip = document.getElementById("tip");
+const fmt = d3.format(",");
+const pct = d3.format(".0%");
+
+/* -------------------------------------------------------------------- boot */
+
+Promise.all([d3.json(MASTERSHEET), d3.json(PA_LAYER)])
+  .then(([master, pa]) => {
+    state.data = master;
+    state.records = master.records;
+    state.pa = pa;
+    document.getElementById("boot").hidden = true;
+    document.getElementById("app").hidden = false;
+    init();
+  })
+  .catch(err => {
+    document.getElementById("boot").innerHTML =
+      `<strong>Could not load the data.</strong><br>${err}<br><br>` +
+      `This dashboard fetches <code>${MASTERSHEET}</code>, so it must be served over HTTP.<br>` +
+      `Run <code>python -m http.server 8000</code> in the project root, then open ` +
+      `<a href="http://localhost:8000/index.html">http://localhost:8000/index.html</a>.`;
+  });
+
+function init() {
+  renderHeader();
+  buildFieldSelectors();
+  initMap();
+
+  document.getElementById("q").addEventListener("input", e => {
+    state.search = parseQuery(e.target.value);
+    apply();
+  });
+  document.getElementById("reset").addEventListener("click", resetAll);
+  document.getElementById("geo-level").addEventListener("change", apply);
+  document.getElementById("explore-field").addEventListener("change", apply);
+  document.getElementById("explore-top").addEventListener("change", apply);
+  document.getElementById("x-field").addEventListener("change", apply);
+  document.getElementById("y-field").addEventListener("change", apply);
+  document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+  document.getElementById("scrim").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+  window.addEventListener("resize", debounce(() => drawAll(), 180));
+
+  apply();
+}
+
+function renderHeader() {
+  const d = state.data, s = d.summary;
+  document.getElementById("hdr-meta").innerHTML = [
+    `Generated <b>${d.generated.replace("T", " ").replace("Z", " UTC")}</b>`,
+    `<b>${fmt(d.record_count)}</b> records`,
+    `<b>${d.sources.length}</b> platforms`,
+  ].join("");
+
+  const kpis = [
+    { v: fmt(s.datasets), l: "Datasets", s: "de-duplicated catalogue entries" },
+    { v: fmt(s.protected_areas), l: "Protected areas", s: `${fmt(Math.round(s.protected_area_km2))} km² total` },
+    { v: pct(s.geotagged_share), l: "Geotagged", s: `${fmt(s.geotagged_records)} records placed` },
+    { v: fmt(s.provinces_covered) + "/15", l: "Provinces", s: "with data holdings" },
+    { v: fmt(s.islands_covered), l: "Islands", s: "named islands referenced" },
+    { v: fmt(s.villages_covered), l: "Villages", s: "villages referenced" },
+    { v: fmt(Math.round(s.protected_marine_km2)), l: "Marine protected km²", s: pct(s.protected_marine_km2 / s.protected_area_km2) + " of protected area" },
+    { v: fmt(s.geospatial_records), l: "Geospatial", s: "machine-readable spatial formats" }
+  ];
+  document.getElementById("kpis").innerHTML = kpis.map(k =>
+    `<div class="kpi"><div class="v">${k.v}</div><div class="l">${k.l}</div><div class="s">${k.s}</div></div>`
+  ).join("");
+
+  document.getElementById("foot").innerHTML =
+    "Sources: " + d.sources.map(x =>
+      `<a href="${x.url}" target="_blank" rel="noopener">${esc(x.short)}</a> (${fmt(x.records)})`
+    ).join(" &middot; ") +
+    `<br>Protected area boundaries from the World Database on Protected Areas. ` +
+    `Reverse geocoding against Fiji province, island and village boundaries. ` +
+    `Built with d3 v7 and MapLibre GL JS v5.`;
+}
+
+function buildFieldSelectors() {
+  const opts = Object.entries(FIELDS)
+    .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join("");
+  const ex = document.getElementById("explore-field");
+  ex.innerHTML = opts; ex.value = "publisher";
+  const x = document.getElementById("x-field"), y = document.getElementById("y-field");
+  x.innerHTML = opts; x.value = "source";
+  y.innerHTML = opts; y.value = "theme";
+}
+
+/* --------------------------------------------------------------- filtering */
+
+function passes(rec) {
+  for (const [field, set] of Object.entries(state.filters)) {
+    if (!set.size) continue;
+    const vals = FIELDS[field].get(rec) || [];
+    if (!vals.some(v => set.has(v))) return false;
+  }
+  if (state.years) {
+    const [a, b] = state.years;
+    const from = rec.temporal_start, to = rec.temporal_end ?? rec.temporal_start;
+    if (from == null && to == null) return false;
+    if ((to ?? from) < a || (from ?? to) > b) return false;
+  }
+  if (state.search) {
+    if (!state.search.every(t => haystack(rec).includes(t))) return false;
+  }
+  return true;
+}
+
+const hayCache = new WeakMap();
+
+// Every bare word must match, so "coral reef" also finds "coral reefs of Fiji";
+// a "quoted phrase" is kept intact for exact matching.
+function parseQuery(raw) {
+  const terms = (raw.toLowerCase().match(/"[^"]+"|\S+/g) || [])
+    .map(t => t.replace(/"/g, "").trim())
+    .filter(Boolean);
+  return terms.length ? terms : null;
+}
+
+function haystack(rec) {
+  let h = hayCache.get(rec);
+  if (h === undefined) {
+    h = [
+      rec.title, rec.description, rec.publisher, rec.source_label, rec.license,
+      (rec.keywords || []).join(" "), (rec.themes || []).join(" "),
+      (rec.data_types || []).join(" "),
+      (rec.location.provinces || []).join(" "),
+      (rec.location.islands || []).join(" "),
+      (rec.location.villages || []).join(" ")
+    ].filter(Boolean).join(" ").toLowerCase();
+    hayCache.set(rec, h);
+  }
+  return h;
+}
+
+function apply() {
+  state.filtered = state.records.filter(passes);
+  drawAll();
+  renderChips();
+  updateMapData();
+  const n = state.filtered.length, t = state.records.length;
+  document.getElementById("count-hint").textContent =
+    n === t ? `${fmt(t)} records` : `${fmt(n)} of ${fmt(t)} records match`;
+}
+
+function toggleFilter(field, value) {
+  const set = state.filters[field];
+  set.has(value) ? set.delete(value) : set.add(value);
+  apply();
+}
+
+function resetAll() {
+  Object.values(state.filters).forEach(s => s.clear());
+  state.years = null;
+  state.search = null;
+  document.getElementById("q").value = "";
+  apply();
+}
+
+function renderChips() {
+  const chips = [];
+  for (const [field, set] of Object.entries(state.filters)) {
+    for (const v of set) {
+      chips.push(`<span class="chip"><b>${esc(FIELDS[field].label)}:</b> ${esc(v)}
+        <button data-f="${field}" data-v="${esc(v)}" title="Remove">&times;</button></span>`);
+    }
+  }
+  if (state.years) {
+    chips.push(`<span class="chip"><b>Years:</b> ${state.years[0]}&ndash;${state.years[1]}
+      <button data-year="1" title="Remove">&times;</button></span>`);
+  }
+  const box = document.getElementById("chips");
+  box.innerHTML = chips.join("");
+  box.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.year) state.years = null;
+    else state.filters[b.dataset.f].delete(b.dataset.v);
+    apply();
+  }));
+}
+
+/* ------------------------------------------------------------------ charts */
+
+function tally(records, field) {
+  const spec = VIRTUAL_FIELDS[field] || FIELDS[field];
+  const m = new Map();
+  for (const r of records) for (const v of (spec.get(r) || [])) {
+    if (v == null || v === "") continue;
+    m.set(v, (m.get(v) || 0) + 1);
+  }
+  return [...m].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+}
+
+/** Horizontal bar chart with click-to-filter and a full-width hit target. */
+function barChart(sel, rows, { field, top = 12, color = null }) {
+  const svg = d3.select(sel);
+  const width = sel.clientWidth || svg.node().parentNode.clientWidth || 420;
+  const data = rows.slice(0, top);
+  const rowH = 25, padT = 4, padB = 4;
+  const height = Math.max(40, data.length * rowH + padT + padB);
+  const labelW = Math.min(190, Math.max(96, width * 0.36));
+  const numW = 46;
+  const barW = Math.max(30, width - labelW - numW - 8);
+  const max = d3.max(data, d => d.count) || 1;
+  const x = d3.scaleLinear().domain([0, max]).range([0, barW]);
+  const filterField = (VIRTUAL_FIELDS[field] || {}).base || field;
+  const active = state.filters[filterField];
+
+  svg.attr("height", height).attr("viewBox", `0 0 ${width} ${height}`);
+  const g = svg.selectAll("g.bar").data(data, d => d.value);
+  g.exit().remove();
+  const en = g.enter().append("g").attr("class", "bar");
+  en.append("rect").attr("class", "hit").attr("fill", "transparent");
+  en.append("rect").attr("class", "track").attr("rx", 3);
+  en.append("rect").attr("class", "value").attr("rx", 3);
+  en.append("text").attr("class", "lab");
+  en.append("text").attr("class", "num");
+
+  const all = en.merge(g)
+    .attr("transform", (d, i) => `translate(0,${padT + i * rowH})`)
+    .classed("on", d => active && active.has(d.value))
+    .on("click", (e, d) => toggleFilter(filterField, d.value))
+    .on("mousemove", (e, d) => showTip(e, `<b>${esc(d.value)}</b><br>${fmt(d.count)} records`))
+    .on("mouseleave", hideTip);
+
+  all.select("rect.hit").attr("x", 0).attr("y", 0).attr("width", width).attr("height", rowH);
+  all.select("rect.track").attr("x", labelW).attr("y", 6).attr("width", barW).attr("height", 12);
+  all.select("rect.value").attr("x", labelW).attr("y", 6).attr("height", 12)
+     .attr("fill", d => color ? color(d.value) : null)
+     .transition().duration(220).attr("width", d => Math.max(2, x(d.count)));
+  all.select("text.lab").attr("x", 0).attr("y", 16)
+     .text(d => truncate(d.value, Math.floor(labelW / 6.4)));
+  all.select("text.num").attr("x", labelW + barW + 7).attr("y", 16).text(d => fmt(d.count));
+
+  if (!data.length) {
+    svg.attr("height", 40).append("text").attr("class", "num").attr("x", 0).attr("y", 20)
+       .text("No records match the current filters.");
+  }
+}
+
+function donut(sel, rows, { field, color }) {
+  const svg = d3.select(sel);
+  const width = sel.clientWidth || 260;
+  const height = 190, r = Math.min(width, height) / 2 - 6;
+  svg.attr("height", height).attr("viewBox", `0 0 ${width} ${height}`).selectAll("*").remove();
+  const g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
+  const total = d3.sum(rows, d => d.count);
+  if (!total) { g.append("text").attr("class", "num").attr("text-anchor", "middle").text("No records"); return; }
+  const arcs = d3.pie().sort(null).value(d => d.count)(rows);
+  const arc = d3.arc().innerRadius(r * 0.58).outerRadius(r).cornerRadius(2).padAngle(.012);
+  const active = state.filters[field];
+
+  g.selectAll("path").data(arcs).join("path")
+    .attr("d", arc)
+    .attr("fill", d => color(d.data.value))
+    .attr("opacity", d => !active.size || active.has(d.data.value) ? 1 : .28)
+    .style("cursor", "pointer")
+    .on("click", (e, d) => toggleFilter(field, d.data.value))
+    .on("mousemove", (e, d) => showTip(e,
+      `<b>${esc(d.data.value)}</b><br>${fmt(d.data.count)} records (${pct(d.data.count / total)})`))
+    .on("mouseleave", hideTip);
+
+  g.append("text").attr("text-anchor", "middle").attr("dy", "-.15em")
+    .style("font-size", "21px").style("font-weight", 680).text(fmt(total));
+  g.append("text").attr("text-anchor", "middle").attr("dy", "1.35em")
+    .style("font-size", "11px").style("fill", "#5d7383").text("records");
+}
+
+/** Records per year, honouring each record's temporal span, with a brush. */
+function yearChart(sel, records) {
+  const svg = d3.select(sel);
+  const width = sel.clientWidth || 600, height = 190;
+  const m = { t: 8, r: 8, b: 24, l: 38 };
+  const now = new Date().getFullYear();
+  const counts = new Map();
+  for (const r of records) {
+    let a = r.temporal_start, b = r.temporal_end ?? r.temporal_start;
+    if (a == null && b == null) continue;
+    a = a ?? b; b = b ?? a;
+    if (b < a) [a, b] = [b, a];
+    a = Math.max(a, 1950); b = Math.min(b, now + 30);
+    for (let y = a; y <= b; y++) counts.set(y, (counts.get(y) || 0) + 1);
+  }
+  const data = [...counts].map(([year, count]) => ({ year, count })).sort((a, b) => a.year - b.year);
+  svg.attr("height", height).attr("viewBox", `0 0 ${width} ${height}`).selectAll("*").remove();
+  if (!data.length) {
+    svg.append("text").attr("class", "num").attr("x", 0).attr("y", 24).text("No temporal metadata in this selection.");
+    return;
+  }
+  const x = d3.scaleLinear().domain(d3.extent(data, d => d.year)).nice().range([m.l, width - m.r]);
+  const y = d3.scaleLinear().domain([0, d3.max(data, d => d.count)]).nice().range([height - m.b, m.t]);
+
+  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${height - m.b})`)
+     .call(d3.axisBottom(x).ticks(Math.max(4, Math.floor(width / 90))).tickFormat(d3.format("d")));
+  svg.append("g").attr("class", "axis").attr("transform", `translate(${m.l},0)`)
+     .call(d3.axisLeft(y).ticks(4).tickFormat(d3.format("~s")));
+
+  svg.append("path").datum(data)
+     .attr("fill", "#0b728522")
+     .attr("d", d3.area().x(d => x(d.year)).y0(y(0)).y1(d => y(d.count)).curve(d3.curveMonotoneX));
+  svg.append("path").datum(data)
+     .attr("fill", "none").attr("stroke", "#0b7285").attr("stroke-width", 1.6)
+     .attr("d", d3.line().x(d => x(d.year)).y(d => y(d.count)).curve(d3.curveMonotoneX));
+
+  const brush = d3.brushX()
+    .extent([[m.l, m.t], [width - m.r, height - m.b]])
+    .on("end", e => {
+      if (!e.sourceEvent) return;
+      if (!e.selection) { if (state.years) { state.years = null; apply(); } return; }
+      state.years = e.selection.map(v => Math.round(x.invert(v)));
+      apply();
+    });
+  const bg = svg.append("g").attr("class", "brush").call(brush);
+  bg.on("dblclick", () => { state.years = null; apply(); });
+  if (state.years) bg.call(brush.move, state.years.map(x));
+
+  svg.append("rect").attr("x", m.l).attr("y", m.t)
+     .attr("width", width - m.l - m.r).attr("height", height - m.t - m.b)
+     .attr("fill", "none").attr("pointer-events", "all")
+     .on("mousemove", e => {
+       const yr = Math.round(x.invert(d3.pointer(e)[0]));
+       const hit = counts.get(yr);
+       if (hit) showTip(e, `<b>${yr}</b><br>${fmt(hit)} records cover this year`);
+     })
+     .on("mouseleave", hideTip)
+     .lower();
+}
+
+/** Field A x Field B heatmap; each cell filters on both values. */
+function crossTab(sel, records, xf, yf, topX = 9, topY = 12) {
+  const svg = d3.select(sel);
+  const width = sel.clientWidth || 900;
+  const xs = tally(records, xf).slice(0, topX).map(d => d.value);
+  const ys = tally(records, yf).slice(0, topY).map(d => d.value);
+  const m = { t: 10, r: 14, b: 76, l: Math.min(210, Math.max(110, width * 0.17)) };
+  const cellH = 24;
+  const height = ys.length * cellH + m.t + m.b;
+  svg.attr("height", height).attr("viewBox", `0 0 ${width} ${height}`).selectAll("*").remove();
+  if (!xs.length || !ys.length) {
+    svg.append("text").attr("class", "num").attr("x", 0).attr("y", 24).text("Not enough data to cross-tabulate.");
+    return;
+  }
+  const counts = new Map();
+  for (const r of records) {
+    const a = new Set((FIELDS[xf].get(r) || []).filter(v => xs.includes(v)));
+    const b = new Set((FIELDS[yf].get(r) || []).filter(v => ys.includes(v)));
+    for (const i of a) for (const j of b) {
+      const k = i + "\u0000" + j;
+      counts.set(k, (counts.get(k) || 0) + 1);
+    }
+  }
+  const x = d3.scaleBand().domain(xs).range([m.l, width - m.r]).padding(.06);
+  const y = d3.scaleBand().domain(ys).range([m.t, m.t + ys.length * cellH]).padding(.09);
+  const max = d3.max([...counts.values()]) || 1;
+  const col = d3.scaleSequential(d3.interpolate("#eef4f6", "#0b4f5c")).domain([0, max]);
+
+  const cells = [];
+  for (const i of xs) for (const j of ys) cells.push({ x: i, y: j, n: counts.get(i + "\u0000" + j) || 0 });
+
+  svg.append("g").selectAll("rect").data(cells).join("rect")
+    .attr("x", d => x(d.x)).attr("y", d => y(d.y))
+    .attr("width", x.bandwidth()).attr("height", y.bandwidth()).attr("rx", 3)
+    .attr("fill", d => d.n ? col(d.n) : "#f7fafb")
+    .style("cursor", d => d.n ? "pointer" : "default")
+    .on("click", (e, d) => {
+      if (!d.n) return;
+      state.filters[xf].add(d.x); state.filters[yf].add(d.y); apply();
+    })
+    .on("mousemove", (e, d) => showTip(e,
+      `<b>${esc(d.x)}</b> &times; <b>${esc(d.y)}</b><br>${fmt(d.n)} records`))
+    .on("mouseleave", hideTip);
+
+  svg.append("g").selectAll("text").data(cells.filter(d => d.n)).join("text")
+    .attr("x", d => x(d.x) + x.bandwidth() / 2).attr("y", d => y(d.y) + y.bandwidth() / 2 + 4)
+    .attr("text-anchor", "middle").style("font-size", "10.5px")
+    .style("fill", d => d.n > max * .55 ? "#fff" : "#3d5563")
+    .style("pointer-events", "none").text(d => fmt(d.n));
+
+  svg.append("g").selectAll("text.yl").data(ys).join("text")
+    .attr("class", "lab").attr("x", m.l - 8).attr("y", d => y(d) + y.bandwidth() / 2 + 4)
+    .attr("text-anchor", "end").style("font-size", "11.5px")
+    .text(d => truncate(d, Math.floor(m.l / 6.6)));
+
+  svg.append("g").selectAll("text.xl").data(xs).join("text")
+    .attr("class", "lab").style("font-size", "11px")
+    .attr("transform", d => `translate(${x(d) + x.bandwidth() / 2},${m.t + ys.length * cellH + 10}) rotate(-38)`)
+    .attr("text-anchor", "end").text(d => truncate(d, 22));
+}
+
+function drawAll() {
+  const f = state.filtered;
+  barChart(document.getElementById("c-source"), tally(f, "source"), { field: "source", top: 10 });
+  donut(document.getElementById("c-realm"), tally(f, "primary_realm"),
+        { field: "primary_realm", color: v => REALM_COLOR[v] || "#adb5bd" });
+  document.getElementById("l-realm").innerHTML = Object.entries(REALM_COLOR)
+    .map(([k, c]) => `<span><i style="background:${c}"></i>${esc(k)}</span>`).join("");
+  barChart(document.getElementById("c-theme"), tally(f, "theme"), { field: "theme", top: 12 });
+  barChart(document.getElementById("c-dtype"), tally(f, "data_type"), { field: "data_type", top: 10 });
+  yearChart(document.getElementById("c-year"), f);
+
+  const lvl = document.getElementById("geo-level").value;
+  barChart(document.getElementById("c-geo"), tally(f, lvl), { field: lvl, top: 15 });
+
+  const ef = document.getElementById("explore-field").value;
+  const et = +document.getElementById("explore-top").value;
+  barChart(document.getElementById("c-explore"), tally(f, ef), { field: ef, top: et });
+
+  crossTab(document.getElementById("c-cross"), f,
+           document.getElementById("x-field").value,
+           document.getElementById("y-field").value);
+
+  renderTable(f);
+}
+
+/* ------------------------------------------------------------------- table */
+
+function renderTable(rows) {
+  const LIMIT = 250;
+  const show = rows.slice(0, LIMIT);
+  document.getElementById("tbl-sub").textContent =
+    rows.length > LIMIT ? `showing first ${LIMIT} of ${fmt(rows.length)} — refine filters to narrow`
+                        : `${fmt(rows.length)} records`;
+  const tb = document.getElementById("tbody");
+  tb.innerHTML = show.map((r, i) => {
+    const loc = locationLabel(r);
+    return `<tr data-i="${i}">
+      <td><strong>${esc(truncate(r.title || "(untitled)", 110))}</strong>
+          ${r.extra && r.extra.also_published_by ? `<div class="muted" style="font-size:11px">also on ${esc(r.extra.also_published_by.join(", "))}</div>` : ""}</td>
+      <td class="nowrap">${esc(r.source_short)}</td>
+      <td><span class="pill ${r.primary_realm}">${esc(r.primary_realm)}</span></td>
+      <td>${esc((r.themes || []).slice(0, 2).join(", "))}</td>
+      <td>${esc(loc)}</td>
+      <td class="nowrap muted">${esc((r.modified || r.issued || "").slice(0, 10))}</td>
+    </tr>`;
+  }).join("");
+  tb.querySelectorAll("tr").forEach(tr =>
+    tr.addEventListener("click", () => openDrawer(show[+tr.dataset.i])));
+}
+
+function locationLabel(r) {
+  const L = r.location;
+  if (L.coverage === "global") return "Global extent";
+  if (L.coverage === "national") return L.provinces.length === 15 ? "Fiji (national)" : (L.provinces.join(", ") || "Fiji (national)");
+  if (L.coverage === "fiji-waters") return "Fiji waters (offshore)";
+  const bits = [];
+  if (L.villages.length) bits.push(L.villages.length === 1 ? L.villages[0] : `${L.villages.length} villages`);
+  if (L.islands.length) bits.push(L.islands.length === 1 ? L.islands[0] : `${L.islands.length} islands`);
+  if (L.provinces.length) bits.push(L.provinces.length === 1 ? L.provinces[0] : `${L.provinces.length} provinces`);
+  return bits.join(" · ") || "Not located";
+}
+
+/* ------------------------------------------------------------------ drawer */
+
+function openDrawer(r) {
+  const L = r.location, X = r.extra || {};
+  const row = (k, v) => v == null || v === "" || (Array.isArray(v) && !v.length)
+    ? "" : `<dt>${esc(k)}</dt><dd>${v}</dd>`;
+  const tags = a => (a && a.length) ? `<div class="tags">${a.slice(0, 30).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : "";
+  const res = (X.resources || []).filter(x => x && x.url).slice(0, 12);
+
+  document.getElementById("drawer-body").innerHTML = `
+    <h2>${esc(r.title || "(untitled)")}</h2>
+    <div style="margin:8px 0 2px">
+      <span class="pill ${r.primary_realm}">${esc(r.primary_realm)}</span>
+      <span class="muted" style="font-size:12px">&nbsp;${esc(r.source_label)}</span>
+    </div>
+    ${r.description ? `<p class="muted" style="font-size:13px">${esc(r.description)}</p>` : ""}
+    <dl>
+      ${row("Publisher", esc(r.publisher))}
+      ${row("Record type", r.record_type === "protected_area" ? "Protected area" : "Dataset")}
+      ${row("Thematic areas", esc((r.themes || []).join(", ")))}
+      ${row("Data types", esc((r.data_types || []).join(", ")))}
+      ${row("Realms", esc((r.realms || []).join(", ")))}
+      ${row("Licence", esc(r.license))}
+      ${row("Access", esc(r.access_level))}
+      ${row("Temporal", r.temporal_start || r.temporal_end
+            ? esc([r.temporal_start, r.temporal_end].filter(Boolean).join(" – ")) : "")}
+      ${row("Issued", esc((r.issued || "").slice(0, 10)))}
+      ${row("Updated", esc((r.modified || "").slice(0, 10)))}
+      ${row("Resources", r.resource_count || "")}
+      ${row("Formats", esc((r.formats || []).join(", ")))}
+      ${row("Landing page", r.landing_page
+            ? `<a href="${esc(r.landing_page)}" target="_blank" rel="noopener">${esc(truncate(r.landing_page, 52))}</a>` : "")}
+      ${row("Also published by", esc((X.also_published_by || []).join(", ")))}
+    </dl>
+    <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">Location</h3>
+    <dl>
+      ${row("Coverage", esc(L.coverage))}
+      ${row("Method", esc(L.method))}
+      ${row("Share of Fiji", L.fiji_coverage != null ? pct(L.fiji_coverage) : "")}
+      ${row("Provinces", esc(L.provinces.join(", ")))}
+      ${row("Islands", L.islands.length ? tags(L.islands) : "")}
+      ${row("Villages", L.villages.length ? tags(L.villages) : "")}
+      ${row("Note", esc(L.note))}
+    </dl>
+    ${r.record_type === "protected_area" ? `
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">Protected area</h3>
+      <dl>
+        ${row("WDPA ID", X.wdpa_id)}
+        ${row("Designation", esc(X.designation))}
+        ${row("IUCN category", esc(X.iucn_category))}
+        ${row("Status", esc([X.status, X.status_year].filter(Boolean).join(" ")))}
+        ${row("Governance", esc(X.governance_type))}
+        ${row("Ownership", esc(X.ownership_type))}
+        ${row("Management authority", esc(X.management_authority))}
+        ${row("Management plan", esc(X.management_plan))}
+        ${row("Area", X.gis_area_km2 != null ? `${fmt(round2(X.gis_area_km2))} km²` : "")}
+        ${row("Marine area", X.marine_area_km2 ? `${fmt(round2(X.marine_area_km2))} km²` : "")}
+      </dl>` : ""}
+    ${X.records_in_fiji ? `<dl>${row("OBIS occurrences in Fiji", fmt(X.records_in_fiji))}</dl>` : ""}
+    ${r.keywords && r.keywords.length ? `<h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">Keywords</h3>${tags(r.keywords)}` : ""}
+    ${res.length ? `<h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383;margin-top:16px">Resources</h3>
+      <ul style="padding-left:18px;font-size:12.5px">${res.map(x =>
+        `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(truncate(x.title || x.url, 60))}</a>
+         ${x.format ? `<span class="muted"> · ${esc(x.format)}</span>` : ""}</li>`).join("")}</ul>` : ""}
+  `;
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("drawer").setAttribute("aria-hidden", "false");
+  document.getElementById("scrim").classList.add("open");
+
+  const c = r.location.centroid;
+  if (c && state.mapReady) state.map.easeTo({ center: [c[0] < 0 ? c[0] + 360 : c[0], c[1]], zoom: 9 });
+}
+
+function closeDrawer() {
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("drawer").setAttribute("aria-hidden", "true");
+  document.getElementById("scrim").classList.remove("open");
+}
+
+/* --------------------------------------------------------------------- map */
+
+function initMap() {
+  const style = {
+    version: 8,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    sources: {
+      demo: {
+        type: "vector", url: "https://demotiles.maplibre.org/tiles/tiles.json",
+        attribution: '&copy; <a href="https://maplibre.org/">MapLibre</a>'
+      }
+    },
+    layers: [
+      { id: "bg", type: "background", paint: { "background-color": "#dfeaf0" } },
+      { id: "demo-land", type: "fill", source: "demo", "source-layer": "countries",
+        paint: { "fill-color": "#f2f6f4", "fill-outline-color": "#c3d3da" } }
+    ]
+  };
+
+  const map = new maplibregl.Map({
+    container: "map", style,
+    bounds: FIJI_BOUNDS, fitBoundsOptions: { padding: 24 },
+    attributionControl: { compact: true }
+  });
+  state.map = map;
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 110, unit: "metric" }));
+
+  map.on("load", () => {
+    const desigs = [...new Set(state.pa.features.map(f => f.properties.DESIG_ENG || f.properties.DESIG))]
+      .filter(Boolean).sort();
+    const matchColor = ["match", ["coalesce", ["get", "DESIG_ENG"], ["get", "DESIG"]]];
+    desigs.forEach(d => matchColor.push(d, DESIG_COLOR[d] || DESIG_FALLBACK));
+    matchColor.push(DESIG_FALLBACK);
+
+    map.addSource("pa", { type: "geojson", data: state.pa });
+    map.addSource("recs", { type: "geojson", data: emptyFC() });
+
+    map.addLayer({
+      id: "pa-fill", type: "fill", source: "pa",
+      paint: { "fill-color": matchColor, "fill-opacity": 0.55 }
+    });
+    map.addLayer({
+      id: "pa-line", type: "line", source: "pa",
+      paint: { "line-color": matchColor, "line-width": 1.2, "line-opacity": 0.95 }
+    });
+    map.addLayer({
+      id: "pa-label", type: "symbol", source: "pa",
+      minzoom: 7.5,
+      layout: {
+        "text-field": ["get", "NAME"],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 7.5, 10, 10, 12, 14, 15],
+        "text-anchor": "center", "text-allow-overlap": false, "text-padding": 4,
+        "text-max-width": 9
+      },
+      paint: { "text-color": "#0d2b33", "text-halo-color": "#ffffff", "text-halo-width": 1.6 }
+    });
+    map.addLayer({
+      id: "rec-pts", type: "circle", source: "recs",
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2.6, 8, 5, 12, 8],
+        "circle-color": ["match", ["get", "realm"],
+          "marine", REALM_COLOR.marine, "terrestrial", REALM_COLOR.terrestrial,
+          "freshwater", REALM_COLOR.freshwater, REALM_COLOR["cross-cutting"]],
+        "circle-opacity": 0.72,
+        "circle-stroke-color": "#ffffff", "circle-stroke-width": 0.9
+      }
+    });
+
+    document.getElementById("l-desig").innerHTML = desigs.map(d =>
+      `<span><i style="background:${DESIG_COLOR[d] || DESIG_FALLBACK}"></i>${esc(d)}</span>`).join("");
+    document.getElementById("map-sub").textContent =
+      `${state.pa.features.length} sites, styled by designation — zoom in for names`;
+
+    const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "320px" });
+    map.on("click", "pa-fill", e => {
+      const p = e.features[0].properties;
+      popup.setLngLat(e.lngLat).setHTML(`
+        <h4>${esc(p.NAME || "Protected area")}</h4>
+        <dl>
+          ${p.NAME_LOCAL && p.NAME_LOCAL !== p.NAME ? `<dt>Local name</dt><dd>${esc(p.NAME_LOCAL)}</dd>` : ""}
+          <dt>Designation</dt><dd>${esc(p.DESIG_ENG || p.DESIG || "—")}</dd>
+          <dt>IUCN</dt><dd>${esc(p.IUCN_CAT || "—")}</dd>
+          <dt>Status</dt><dd>${esc([p.STATUS, p.STATUS_YR].filter(Boolean).join(" "))}</dd>
+          <dt>Area</dt><dd>${p.GIS_AREA != null ? fmt(round2(+p.GIS_AREA)) + " km²" : "—"}</dd>
+          <dt>Manager</dt><dd>${esc(p.MANG_AUTH || "—")}</dd>
+        </dl>`).addTo(map);
+    });
+    map.on("click", "rec-pts", e => {
+      const uid = e.features[0].properties.uid;
+      const rec = state.records.find(r => r.uid === uid);
+      if (rec) openDrawer(rec);
+    });
+    ["pa-fill", "rec-pts"].forEach(id => {
+      map.on("mouseenter", id, () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", id, () => map.getCanvas().style.cursor = "");
+    });
+
+    state.mapReady = true;
+    updateMapData();
+  });
+
+  document.getElementById("pa-labels").addEventListener("change", e =>
+    map.setLayoutProperty("pa-label", "visibility", e.target.checked ? "visible" : "none"));
+  document.getElementById("rec-points").addEventListener("change", e =>
+    map.setLayoutProperty("rec-pts", "visibility", e.target.checked ? "visible" : "none"));
+  document.getElementById("fit").addEventListener("click", () =>
+    map.fitBounds(FIJI_BOUNDS, { padding: 24 }));
+}
+
+function updateMapData() {
+  if (!state.mapReady) return;
+  const feats = [];
+  for (const r of state.filtered) {
+    const c = r.location.centroid;
+    if (!c) continue;
+    // Match the protected area layer's continuous Pacific longitude frame.
+    feats.push({
+      type: "Feature",
+      properties: { uid: r.uid, realm: r.primary_realm, title: r.title || "" },
+      geometry: { type: "Point", coordinates: [c[0] < 0 ? c[0] + 360 : c[0], c[1]] }
+    });
+  }
+  state.map.getSource("recs").setData({ type: "FeatureCollection", features: feats });
+}
+
+const emptyFC = () => ({ type: "FeatureCollection", features: [] });
+
+/* ------------------------------------------------------------------- utils */
+
+function esc(s) {
+  return s == null ? "" : String(s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function truncate(s, n) {
+  s = String(s ?? "");
+  return s.length > n ? s.slice(0, n - 1).trimEnd() + "\u2026" : s;
+}
+function round2(v) { return Math.round(v * 100) / 100; }
+function showTip(e, html) {
+  tip.innerHTML = html;
+  tip.style.opacity = 1;
+  const pad = 14;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  const r = tip.getBoundingClientRect();
+  if (x + r.width > window.innerWidth - 8) x = e.clientX - r.width - pad;
+  if (y + r.height > window.innerHeight - 8) y = e.clientY - r.height - pad;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+function hideTip() { tip.style.opacity = 0; }
+function debounce(fn, ms) {
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+</script>
+</body>
+</html>
