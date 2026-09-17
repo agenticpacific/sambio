@@ -87,6 +87,12 @@ svg{display:block;width:100%;overflow:visible}
 .tip{position:fixed;pointer-events:none;z-index:9999;background:#10212b;color:#fff;padding:6px 9px;
   border-radius:6px;font-size:12px;opacity:0;transition:opacity .1s;max-width:320px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.habitat{margin:4px 0 14px;font-size:12px}
+.hb-row{display:grid;grid-template-columns:118px 1fr 118px;align-items:center;gap:8px;margin:3px 0}
+.hb-name{color:#445a68;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb-bar{background:#e8eef1;border-radius:3px;height:9px;overflow:hidden}
+.hb-bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.hb-val{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
 .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
 
 .selects{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
@@ -144,8 +150,8 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
          alt="SAMBIO Fiji" width="260" height="280"
          onerror="this.remove()">
     <div class="brand-text">
-      <h1 style="margin-top: 10px">SAMBIO Public Data and Records Master-Sheet</h1>
-      <p>Safeguarding Marine &amp; Terrestrial Biodiversity in Fiji. A consolidated catalogue of environment
+      <h1 style="margin-top: 10px">SAMBIO Public Data Records Master-Sheet</h1>
+      <p>Safeguarding Marine &amp; Terrestrial Biodiversity in Fiji. A consolidated living catalogue of environment
          and biodiversity public data holdings, de-duplicated across platforms, screened for relevance to SAMBIO,
          classified by thematic area and reverse geocoded to Fijian provinces, islands and villages.</p>
       <div class="meta" id="hdr-meta"></div>
@@ -314,9 +320,15 @@ const DESIG_COLOR = {
 const DESIG_FALLBACK = "#868e96";
 
 /* Every filterable/groupable field, with its accessor. */
+const RECORD_TYPES = {
+  dataset: "Dataset",
+  protected_area: "Protected area",
+  habitat_summary: "Reef habitat summary"
+};
+
 const FIELDS = {
   source:         { label: "Data source",       get: r => [r.source_short] },
-  record_type:    { label: "Record type",       get: r => [r.record_type === "protected_area" ? "Protected area" : "Dataset"] },
+  record_type:    { label: "Record type",       get: r => [RECORD_TYPES[r.record_type] || "Dataset"] },
   realm:          { label: "Realm",             get: r => r.realms || [] },
   primary_realm:  { label: "Primary realm",     get: r => [r.primary_realm] },
   theme:          { label: "Thematic area",     get: r => r.themes || [] },
@@ -403,9 +415,9 @@ function init() {
 function renderHeader() {
   const d = state.data, s = d.summary;
   document.getElementById("hdr-meta").innerHTML = [
-    `Generated <b>${d.generated.replace("T", " ").replace("Z", " UTC")}</b>`,
-    `<b>${fmt(d.record_count)}</b> records`,
-    `<b>${d.sources.length}</b> platforms`,
+    `Last Updated On <b>${d.generated.replace("T", " ").replace("Z", " UTC")}</b>`,
+    `Consisting Of <b>${fmt(d.record_count)}</b> Records Across`,
+    `<b>${d.sources.length}</b> Platforms`,
   ].join("");
 
   const kpis = [
@@ -821,7 +833,7 @@ function openDrawer(r) {
     ${r.description ? `<p class="muted" style="font-size:13px">${esc(r.description)}</p>` : ""}
     <dl>
       ${row("Publisher", esc(r.publisher))}
-      ${row("Record type", r.record_type === "protected_area" ? "Protected area" : "Dataset")}
+      ${row("Record type", RECORD_TYPES[r.record_type] || "Dataset")}
       ${row("Thematic areas", esc((r.themes || []).join(", ")))}
       ${row("Data types", esc((r.data_types || []).join(", ")))}
       ${row("Realms", esc((r.realms || []).join(", ")))}
@@ -861,6 +873,19 @@ function openDrawer(r) {
         ${row("Area", X.gis_area_km2 != null ? `${fmt(round2(X.gis_area_km2))} km²` : "")}
         ${row("Marine area", X.marine_area_km2 ? `${fmt(round2(X.marine_area_km2))} km²` : "")}
       </dl>` : ""}
+    ${X.class_area_km2 ? `
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">Mapped habitat</h3>
+      <dl>
+        ${row("Product", esc(X.product))}
+        ${row("Total mapped", `${fmt(round2(X.mapped_area_km2))} km²`)}
+        ${row("Derived at", X.tile_zoom ? `zoom ${X.tile_zoom} vector tiles` : "")}
+      </dl>
+      <div class="habitat">${Object.entries(X.class_area_km2).sort((a, b) => b[1] - a[1]).map(([k, v]) => {
+        const share = X.mapped_area_km2 ? v / X.mapped_area_km2 : 0;
+        return `<div class="hb-row"><span class="hb-name">${esc(k)}</span>
+          <span class="hb-bar"><i style="width:${(share * 100).toFixed(1)}%"></i></span>
+          <span class="hb-val">${fmt(round2(v))} km² · ${(share * 100).toFixed(0)}%</span></div>`;
+      }).join("")}</div>` : ""}
     ${X.records_in_fiji ? `<dl>${row("OBIS occurrences in Fiji", fmt(X.records_in_fiji))}</dl>` : ""}
     ${r.keywords && r.keywords.length ? `<h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">Keywords</h3>${tags(r.keywords)}` : ""}
     ${res.length ? `<h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383;margin-top:16px">Resources</h3>
