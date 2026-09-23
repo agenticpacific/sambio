@@ -66,6 +66,12 @@ button.primary:hover{background:#095e6e;color:#fff}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px 10px;box-shadow:var(--shadow);min-width:0}
 .card h3{font-size:13px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tabs{display:flex;flex-wrap:wrap;gap:4px}
+.tab{font:inherit;font-size:13px;font-weight:600;color:var(--muted);background:none;border:none;
+  padding:4px 2px;cursor:pointer;border-bottom:2px solid transparent}
+.tab+.tab{margin-left:10px}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--ink);border-bottom-color:var(--accent)}
 .card h3 .sub{font-weight:400;color:var(--muted);font-size:11px}
 .card .body{margin-top:8px}
 .span3{grid-column:span 3}.span4{grid-column:span 4}.span5{grid-column:span 5}
@@ -100,6 +106,18 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6
 select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
 
 #map{height:560px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.pipap-layout{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:start}
+@media(max-width:1000px){.pipap-layout{grid-template-columns:1fr}}
+#pipap-map{height:420px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+#pipap-twrap{max-height:420px}
+th[data-sort]{cursor:pointer;user-select:none}
+th[data-sort]:hover{color:var(--accent)}
+th.sorted::after{content:" \25BC"}
+th.sorted.asc::after{content:" \25B2"}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.yes{background:#e3f2f5;color:#08606f}
+.badge.no{background:#f1f3f5;color:#868e96}
 .maplibregl-popup-content{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   padding:12px 14px;border-radius:9px;max-width:300px}
 .maplibregl-popup-content h4{margin:0 0 6px;font-size:13.5px}
@@ -244,10 +262,14 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
 
       <div class="card span12">
         <h3>
-          <span>Protected areas &mdash; WDPA Fiji</span>
+          <span class="tabs" id="map-tabs">
+            <button class="tab active" data-tab="wdpa">Protected areas &mdash; WDPA Fiji</button>
+            <button class="tab" data-tab="pipap">National register &mdash; SPREP Protected Areas Portal (PIPAP)</button>
+          </span>
           <span class="sub" id="map-sub"></span>
+          <span class="sub" id="pipap-sub" hidden></span>
         </h3>
-        <div class="body">
+        <div class="body" id="tab-wdpa">
           <div class="map-ctl">
             <label><input type="checkbox" id="pa-labels" checked> Protected area labels</label>
             <label><input type="checkbox" id="rec-points" checked> Filtered dataset locations</label>
@@ -255,6 +277,40 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
           </div>
           <div id="map"></div>
           <div class="legend" id="l-desig"></div>
+        </div>
+        <div class="body" id="tab-pipap" hidden>
+          <p class="muted" style="font-size:12.5px;margin:0 0 10px">
+            Fiji's compliance register from the
+            <a href="https://pipap.sprep.org/country/fj" target="_blank" rel="noopener">Protected and Conserved Area Portal for the Pacific</a>,
+            cross-matched to the WDPA layer in the adjacent tab by WDPA ID. Rows with no WDPA match have no known geometry, so they are listed but not mapped.
+          </p>
+          <div class="map-ctl">
+            <input type="search" id="pipap-q" placeholder="Search name or designation…" style="min-width:220px">
+            <select id="pipap-designation"><option value="">All designations</option></select>
+            <select id="pipap-status"><option value="">All statuses</option></select>
+            <label><input type="checkbox" id="pipap-matched-only"> WDPA-matched only</label>
+          </div>
+          <div class="pipap-layout">
+            <div class="twrap" id="pipap-twrap">
+              <table>
+                <thead><tr>
+                  <th data-sort="title" style="width:22%">Title</th>
+                  <th data-sort="designation">Designation</th>
+                  <th data-sort="iucn_category">IUCN</th>
+                  <th data-sort="management_plan">Mgmt plan</th>
+                  <th data-sort="status">Status</th>
+                  <th data-sort="reported_area_km2" class="num">Area km&sup2;</th>
+                  <th data-sort="reported_marine_area_km2" class="num">Marine km&sup2;</th>
+                  <th data-sort="matched">Map</th>
+                </tr></thead>
+                <tbody id="pipap-tbody"></tbody>
+              </table>
+            </div>
+            <div>
+              <div id="pipap-map"></div>
+              <div class="legend" id="pipap-legend"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -291,6 +347,7 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
 
 const MASTERSHEET = "mastersheet.json";
 const PA_LAYER = "fj-pa-master.geojson";
+const PIPAP_REGISTER = "pipap-register.json";
 
 // Fiji in the continuous Pacific frame the protected area layer uses.
 const FIJI_BOUNDS = [[176.6, -21.2], [181.6, -12.2]];
@@ -327,7 +384,7 @@ const RECORD_TYPES = {
 };
 
 const FIELDS = {
-  source:         { label: "Data source",       get: r => [r.source_short] },
+  source:         { label: "Data source",       get: r => (r.extra && r.extra.pipap) ? [r.source_short, "PIPAP"] : [r.source_short] },
   record_type:    { label: "Record type",       get: r => [RECORD_TYPES[r.record_type] || "Dataset"] },
   realm:          { label: "Realm",             get: r => r.realms || [] },
   primary_realm:  { label: "Primary realm",     get: r => [r.primary_realm] },
@@ -372,16 +429,21 @@ const pct = d3.format(".0%");
 
 /* -------------------------------------------------------------------- boot */
 
-Promise.all([d3.json(MASTERSHEET), d3.json(PA_LAYER)])
-  .then(([master, pa]) => {
+Promise.all([d3.json(MASTERSHEET), d3.json(PA_LAYER), d3.json(PIPAP_REGISTER)])
+  .then(([master, pa, pipap]) => {
     state.data = master;
     state.records = master.records;
     state.pa = pa;
+    state.pipap = pipap;
+    state.pipapSort = { key: "reported_area_km2", dir: "desc" };
     document.getElementById("boot").hidden = true;
     document.getElementById("app").hidden = false;
     init();
   })
   .catch(err => {
+    console.error("Dashboard initialization failed:", err);
+    document.getElementById("boot").hidden = false;
+    document.getElementById("app").hidden = true;
     document.getElementById("boot").innerHTML =
       `<strong>Could not load the data.</strong><br>${err}<br><br>` +
       `This dashboard fetches <code>${MASTERSHEET}</code>, so it must be served over HTTP.<br>` +
@@ -393,6 +455,8 @@ function init() {
   renderHeader();
   buildFieldSelectors();
   initMap();
+  initPipap();
+  initTabs();
 
   document.getElementById("q").addEventListener("input", e => {
     state.search = parseQuery(e.target.value);
@@ -872,7 +936,18 @@ function openDrawer(r) {
         ${row("Management plan", esc(X.management_plan))}
         ${row("Area", X.gis_area_km2 != null ? `${fmt(round2(X.gis_area_km2))} km²` : "")}
         ${row("Marine area", X.marine_area_km2 ? `${fmt(round2(X.marine_area_km2))} km²` : "")}
-      </dl>` : ""}
+      </dl>
+      ${X.pipap ? `
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">PIPAP cross-reference</h3>
+      <dl>
+        ${row("PIPAP designation", esc(X.pipap.designation))}
+        ${row("PIPAP IUCN category", esc(X.pipap.iucn_category))}
+        ${row("PIPAP status", esc([X.pipap.status, X.pipap.status_year].filter(Boolean).join(" ")))}
+        ${row("PIPAP management plan", X.pipap.management_plan == null ? "" : (X.pipap.management_plan ? "Yes" : "No"))}
+        ${row("PIPAP reported area", X.pipap.reported_area_km2 != null ? `${fmt(round2(X.pipap.reported_area_km2))} km²` : "")}
+        ${row("PIPAP reported marine area", X.pipap.reported_marine_area_km2 != null ? `${fmt(round2(X.pipap.reported_marine_area_km2))} km²` : "")}
+      </dl>
+      <p class="muted" style="font-size:11.5px">Verified against the <a href="https://pipap.sprep.org/country/fj" target="_blank" rel="noopener">SPREP Protected Areas Portal (PIPAP)</a> national register.</p>` : ""}` : ""}
     ${X.class_area_km2 ? `
       <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">Mapped habitat</h3>
       <dl>
@@ -1035,6 +1110,202 @@ function updateMapData() {
 }
 
 const emptyFC = () => ({ type: "FeatureCollection", features: [] });
+
+/* -------------------------------------------------------------------- pipap */
+
+function initTabs() {
+  let pipapShown = false;
+  document.querySelectorAll("#map-tabs .tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll("#map-tabs .tab").forEach(b =>
+        b.classList.toggle("active", b === btn));
+      document.getElementById("tab-wdpa").hidden = tab !== "wdpa";
+      document.getElementById("tab-pipap").hidden = tab !== "pipap";
+      document.getElementById("map-sub").hidden = tab !== "wdpa";
+      document.getElementById("pipap-sub").hidden = tab !== "pipap";
+      // Refit the initially hidden map once its real dimensions are available.
+      requestAnimationFrame(() => {
+        if (tab === "wdpa" && state.map) state.map.resize();
+        if (tab === "pipap" && state.pipapMap) {
+          state.pipapMap.resize();
+          if (!pipapShown) {
+            state.pipapMap.fitBounds(FIJI_BOUNDS, { padding: 24, duration: 0 });
+            pipapShown = true;
+          }
+        }
+      });
+    });
+  });
+}
+
+function initPipap() {
+  const rows = state.pipap.rows;
+
+  const designations = [...new Set(rows.map(r => r.designation).filter(Boolean))].sort();
+  const statuses = [...new Set(rows.map(r => r.status).filter(Boolean))].sort();
+  d3.select("#pipap-designation").selectAll("option.opt").data(designations).join("option")
+    .attr("class", "opt").attr("value", d => d).text(d => d);
+  d3.select("#pipap-status").selectAll("option.opt").data(statuses).join("option")
+    .attr("class", "opt").attr("value", d => d).text(d => d);
+
+  document.getElementById("pipap-sub").textContent =
+    `${state.pipap.count} sites · ${state.pipap.matched} matched to WDPA geometry`;
+
+  const style = {
+    version: 8,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    sources: {
+      demo: {
+        type: "vector", url: "https://demotiles.maplibre.org/tiles/tiles.json",
+        attribution: '&copy; <a href="https://maplibre.org/">MapLibre</a> · Register: <a href="https://pipap.sprep.org/country/fj" target="_blank" rel="noopener">PIPAP</a>'
+      }
+    },
+    layers: [
+      { id: "bg", type: "background", paint: { "background-color": "#dfeaf0" } },
+      { id: "demo-land", type: "fill", source: "demo", "source-layer": "countries",
+        paint: { "fill-color": "#f2f6f4", "fill-outline-color": "#c3d3da" } }
+    ]
+  };
+  const map = new maplibregl.Map({
+    container: "pipap-map", style,
+    bounds: FIJI_BOUNDS, fitBoundsOptions: { padding: 24 },
+    attributionControl: { compact: true }
+  });
+  state.pipapMap = map;
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+
+  const desigColor = ["match", ["get", "designation"]];
+  designations.forEach(d => desigColor.push(d, DESIG_COLOR[d] || DESIG_FALLBACK));
+  desigColor.push(DESIG_FALLBACK);
+
+  map.on("load", () => {
+    map.addSource("pipap-pts", { type: "geojson", data: emptyFC() });
+    map.addLayer({
+      id: "pipap-pts", type: "circle", source: "pipap-pts",
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 4, 8, 7, 12, 10],
+        "circle-color": desigColor,
+        "circle-opacity": 0.85,
+        "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.2
+      }
+    });
+    const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "300px" });
+    map.on("click", "pipap-pts", e => {
+      const p = e.features[0].properties;
+      popup.setLngLat(e.lngLat).setHTML(`
+        <h4>${esc(p.title)}</h4>
+        <dl>
+          <dt>Designation</dt><dd>${esc(p.designation || "—")}</dd>
+          <dt>IUCN</dt><dd>${esc(p.iucn_category || "—")}</dd>
+          <dt>Status</dt><dd>${esc([p.status, p.status_year].filter(Boolean).join(" ")) || "—"}</dd>
+          <dt>Area</dt><dd>${p.reported_area_km2 != null ? fmt(round2(p.reported_area_km2)) + " km²" : "—"}</dd>
+        </dl>`).addTo(map);
+    });
+    map.on("mouseenter", "pipap-pts", () => map.getCanvas().style.cursor = "pointer");
+    map.on("mouseleave", "pipap-pts", () => map.getCanvas().style.cursor = "");
+
+    document.getElementById("pipap-legend").innerHTML = designations.map(d =>
+      `<span><i style="background:${DESIG_COLOR[d] || DESIG_FALLBACK}"></i>${esc(d)}</span>`).join("");
+
+    state.pipapMapReady = true;
+    renderPipap();
+  });
+
+  document.getElementById("pipap-q").addEventListener("input", renderPipap);
+  document.getElementById("pipap-designation").addEventListener("change", renderPipap);
+  document.getElementById("pipap-status").addEventListener("change", renderPipap);
+  document.getElementById("pipap-matched-only").addEventListener("change", renderPipap);
+  document.querySelectorAll("#pipap-twrap th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      if (state.pipapSort.key === key) {
+        state.pipapSort.dir = state.pipapSort.dir === "asc" ? "desc" : "asc";
+      } else {
+        state.pipapSort = { key, dir: "asc" };
+      }
+      renderPipap();
+    });
+  });
+  renderPipap();
+}
+
+function pipapFiltered() {
+  const q = (document.getElementById("pipap-q").value || "").trim().toLowerCase();
+  const designation = document.getElementById("pipap-designation").value;
+  const status = document.getElementById("pipap-status").value;
+  const matchedOnly = document.getElementById("pipap-matched-only").checked;
+  return state.pipap.rows.filter(r => {
+    if (matchedOnly && !r.matched) return false;
+    if (designation && r.designation !== designation) return false;
+    if (status && r.status !== status) return false;
+    if (q) {
+      const hay = `${r.title || ""} ${r.designation || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderPipap() {
+  const { key, dir } = state.pipapSort;
+  const mult = dir === "asc" ? 1 : -1;
+  const rows = pipapFiltered().sort((a, b) => {
+    let x = a[key], y = b[key];
+    if (key === "matched") { x = a.matched ? 1 : 0; y = b.matched ? 1 : 0; }
+    if (x == null && y == null) return 0;
+    if (x == null) return 1;
+    if (y == null) return -1;
+    if (typeof x === "string") return x.localeCompare(y) * mult;
+    return (x - y) * mult;
+  });
+
+  document.querySelectorAll("#pipap-twrap th[data-sort]").forEach(th => {
+    th.classList.toggle("sorted", th.dataset.sort === key);
+    th.classList.toggle("asc", th.dataset.sort === key && dir === "asc");
+  });
+
+  const tbody = d3.select("#pipap-tbody");
+  const tr = tbody.selectAll("tr").data(rows, d => d.wdpa_id || d.title);
+  tr.exit().remove();
+  const trEnter = tr.enter().append("tr");
+  trEnter.merge(tr)
+    .style("cursor", d => d.matched ? "pointer" : "default")
+    .on("click", (_, d) => pipapFocus(d))
+    .html(d => `
+      <td>${esc(d.title || "(untitled)")}</td>
+      <td>${esc(d.designation || "—")}</td>
+      <td>${esc(d.iucn_category || "—")}</td>
+      <td>${d.management_plan == null ? "—" : `<span class="badge ${d.management_plan ? "yes" : "no"}">${d.management_plan ? "Yes" : "No"}</span>`}</td>
+      <td>${esc([d.status, d.status_year].filter(Boolean).join(" ")) || "—"}</td>
+      <td class="num">${d.reported_area_km2 != null ? fmt(round2(d.reported_area_km2)) : "—"}</td>
+      <td class="num">${d.reported_marine_area_km2 != null ? fmt(round2(d.reported_marine_area_km2)) : "—"}</td>
+      <td>${d.matched ? '<span class="badge yes">mapped</span>' : '<span class="badge no">no geometry</span>'}</td>
+    `);
+
+  document.getElementById("pipap-sub").textContent =
+    `${rows.length} of ${state.pipap.count} sites · ${state.pipap.matched} matched to WDPA geometry`;
+
+  if (state.pipapMapReady) {
+    const feats = rows.filter(d => d.matched && d.centroid).map(d => ({
+      type: "Feature",
+      properties: {
+        title: d.title, designation: d.designation, iucn_category: d.iucn_category,
+        status: d.status, status_year: d.status_year, reported_area_km2: d.reported_area_km2
+      },
+      geometry: { type: "Point", coordinates: [d.centroid[0] < 0 ? d.centroid[0] + 360 : d.centroid[0], d.centroid[1]] }
+    }));
+    state.pipapMap.getSource("pipap-pts").setData({ type: "FeatureCollection", features: feats });
+  }
+}
+
+function pipapFocus(d) {
+  if (!d.matched || !d.centroid || !state.pipapMapReady) return;
+  const lon = d.centroid[0] < 0 ? d.centroid[0] + 360 : d.centroid[0];
+  state.pipapMap.easeTo({ center: [lon, d.centroid[1]], zoom: 10 });
+  const rec = d.wdpa_uid ? state.records.find(r => r.uid === d.wdpa_uid) : null;
+  if (rec) openDrawer(rec);
+}
 
 /* ------------------------------------------------------------------- utils */
 
