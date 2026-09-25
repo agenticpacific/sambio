@@ -106,6 +106,9 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6
 select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
 
 #map{height:560px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+#wetlands-map{height:560px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.wetlands-layout{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:14px;align-items:start}
+@media(max-width:1000px){.wetlands-layout{grid-template-columns:1fr}}
 .pipap-layout{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:start}
 @media(max-width:1000px){.pipap-layout{grid-template-columns:1fr}}
 #pipap-map{height:420px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
@@ -265,9 +268,11 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
           <span class="tabs" id="map-tabs">
             <button class="tab active" data-tab="wdpa">Protected areas &mdash; WDPA Fiji</button>
             <button class="tab" data-tab="pipap">National register &mdash; SPREP Protected Areas Portal (PIPAP)</button>
+            <button class="tab" data-tab="wetlands">Wetlands &mdash; Fiji wetland sites</button>
           </span>
           <span class="sub" id="map-sub"></span>
           <span class="sub" id="pipap-sub" hidden></span>
+          <span class="sub" id="wetlands-sub" hidden></span>
         </h3>
         <div class="body" id="tab-wdpa">
           <div class="map-ctl">
@@ -312,6 +317,19 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
             </div>
           </div>
         </div>
+        <div class="body" id="tab-wetlands" hidden>
+          <div class="map-ctl">
+            <label><input type="checkbox" id="wetland-labels" checked> Site labels</label>
+            <button id="wetland-fit">Zoom to Fiji</button>
+          </div>
+          <div class="wetlands-layout">
+            <div id="wetlands-map"></div>
+            <div class="card" style="padding:10px 12px;min-height:100%">
+              <h3 style="margin-bottom:8px">Type</h3>
+              <div class="legend" id="wetland-legend" style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="card span12">
@@ -348,6 +366,7 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
 const MASTERSHEET = "mastersheet.json";
 const PA_LAYER = "fj-pa-master.geojson";
 const PIPAP_REGISTER = "pipap-register.json";
+const WETLANDS_LAYER = "wetlands.geojson";
 
 // Fiji in the continuous Pacific frame the protected area layer uses.
 const FIJI_BOUNDS = [[176.6, -21.2], [181.6, -12.2]];
@@ -429,12 +448,27 @@ const pct = d3.format(".0%");
 
 /* -------------------------------------------------------------------- boot */
 
-Promise.all([d3.json(MASTERSHEET), d3.json(PA_LAYER), d3.json(PIPAP_REGISTER)])
-  .then(([master, pa, pipap]) => {
+Promise.allSettled([
+  d3.json(MASTERSHEET),
+  d3.json(PA_LAYER),
+  d3.json(PIPAP_REGISTER),
+  d3.json(WETLANDS_LAYER)
+]).then(results => {
+    const [masterResult, paResult, pipapResult, wetlandsResult] = results;
+    if (masterResult.status !== "fulfilled" || paResult.status !== "fulfilled" || wetlandsResult.status !== "fulfilled") {
+      throw new Error("Missing required dashboard data files.");
+    }
+
+    const master = masterResult.value;
+    const pa = paResult.value;
+    const wetlands = wetlandsResult.value;
+    const pipap = pipapResult.status === "fulfilled" ? pipapResult.value : { rows: [], count: 0, matched: 0 };
+
     state.data = master;
     state.records = master.records;
     state.pa = pa;
     state.pipap = pipap;
+    state.wetlands = wetlands;
     state.pipapSort = { key: "reported_area_km2", dir: "desc" };
     document.getElementById("boot").hidden = true;
     document.getElementById("app").hidden = false;
@@ -456,6 +490,7 @@ function init() {
   buildFieldSelectors();
   initMap();
   initPipap();
+  initWetlands();
   initTabs();
 
   document.getElementById("q").addEventListener("input", e => {
@@ -1115,6 +1150,7 @@ const emptyFC = () => ({ type: "FeatureCollection", features: [] });
 
 function initTabs() {
   let pipapShown = false;
+  let wetlandsShown = false;
   document.querySelectorAll("#map-tabs .tab").forEach(btn => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.tab;
@@ -1122,8 +1158,10 @@ function initTabs() {
         b.classList.toggle("active", b === btn));
       document.getElementById("tab-wdpa").hidden = tab !== "wdpa";
       document.getElementById("tab-pipap").hidden = tab !== "pipap";
+      document.getElementById("tab-wetlands").hidden = tab !== "wetlands";
       document.getElementById("map-sub").hidden = tab !== "wdpa";
       document.getElementById("pipap-sub").hidden = tab !== "pipap";
+      document.getElementById("wetlands-sub").hidden = tab !== "wetlands";
       // Refit the initially hidden map once its real dimensions are available.
       requestAnimationFrame(() => {
         if (tab === "wdpa" && state.map) state.map.resize();
@@ -1134,13 +1172,128 @@ function initTabs() {
             pipapShown = true;
           }
         }
+        if (tab === "wetlands" && state.wetlandsMap) {
+          state.wetlandsMap.resize();
+          if (!wetlandsShown) {
+            state.wetlandsMap.fitBounds(FIJI_BOUNDS, { padding: 24, duration: 0 });
+            wetlandsShown = true;
+          }
+        }
       });
     });
   });
 }
 
+function initWetlands() {
+  const style = {
+    version: 8,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    sources: {
+      demo: {
+        type: "vector", url: "https://demotiles.maplibre.org/tiles/tiles.json",
+        attribution: '&copy; <a href="https://maplibre.org/">MapLibre</a>'
+      }
+    },
+    layers: [
+      { id: "bg", type: "background", paint: { "background-color": "#dfeaf0" } },
+      { id: "demo-land", type: "fill", source: "demo", "source-layer": "countries",
+        paint: { "fill-color": "#f2f6f4", "fill-outline-color": "#c3d3da" } }
+    ]
+  };
+
+  const map = new maplibregl.Map({
+    container: "wetlands-map", style,
+    bounds: FIJI_BOUNDS, fitBoundsOptions: { padding: 24 },
+    attributionControl: { compact: true }
+  });
+  state.wetlandsMap = map;
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 110, unit: "metric" }));
+
+  map.on("load", () => {
+    map.addSource("wetlands", { type: "geojson", data: state.wetlands });
+    map.addLayer({
+      id: "wetlands-points", type: "circle", source: "wetlands",
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 4, 8, 7, 12, 10],
+        "circle-color": ["match", ["get", "wetland_type"],
+          "Mangrove", "#1c7ed6",
+          "Peat Swamp", "#2f9e44",
+          "Freshwater Lake", "#0ca678",
+          "Lake", "#69db7c",
+          "Salt Lake", "#74c0fc",
+          "Riverine Forest", "#5c7cfa",
+          "Freshwater Swamp", "#12b886",
+          "Brackish Swamp", "#2b8a3e",
+          "Brackish Pond", "#20c997",
+          "Synthetic Dam", "#e67700",
+          "#868e96"],
+        "circle-opacity": 0.8,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1
+      }
+    });
+    map.addLayer({
+      id: "wetlands-labels", type: "symbol", source: "wetlands",
+      minzoom: 6,
+      layout: {
+        "text-field": ["coalesce", ["get", "site_name"], "Wetland site"],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 6, 9, 10, 11, 14, 14],
+        "text-anchor": "center",
+        "text-allow-overlap": false,
+        "text-padding": 2,
+        "text-max-width": 8
+      },
+      paint: {
+        "text-color": "#103a43",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.6,
+        "text-halo-blur": 0.5
+      }
+    });
+
+    document.getElementById("wetlands-sub").textContent = `${state.wetlands.features.length} wetland sites`;
+    const wetlandTypes = [...new Set(state.wetlands.features.map(f => f.properties.wetland_type).filter(Boolean))].sort();
+    const wetlandTypeColors = {
+      Mangrove: "#1c7ed6",
+      "Peat Swamp": "#2f9e44",
+      "Freshwater Lake": "#0ca678",
+      Lake: "#69db7c",
+      "Salt Lake": "#74c0fc",
+      "Riverine Forest": "#5c7cfa",
+      "Freshwater Swamp": "#12b886",
+      "Brackish Swamp": "#2b8a3e",
+      "Brackish Pond": "#20c997",
+      "Synthetic Dam": "#e67700"
+    };
+    document.getElementById("wetland-legend").innerHTML = wetlandTypes.map(type =>
+      `<span><i style="background:${wetlandTypeColors[type] || '#868e96'}"></i>${esc(type)}</span>`).join("");
+
+    const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "260px" });
+    map.on("click", "wetlands-points", e => {
+      const p = e.features[0].properties;
+      popup.setLngLat(e.lngLat).setHTML(`
+        <h4>${esc(p.site_name || "Wetland site")}</h4>
+        <dl>
+          <dt>Type</dt><dd>${esc(p.wetland_type || "—")}</dd>
+          <dt>Coordinates</dt><dd>${p.latitude != null && p.longitude != null ? `${p.latitude.toFixed(3)}, ${p.longitude.toFixed(3)}` : "—"}</dd>
+        </dl>`).addTo(map);
+    });
+    ["wetlands-points"].forEach(id => {
+      map.on("mouseenter", id, () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", id, () => map.getCanvas().style.cursor = "");
+    });
+  });
+
+  document.getElementById("wetland-labels").addEventListener("change", e =>
+    map.setLayoutProperty("wetlands-labels", "visibility", e.target.checked ? "visible" : "none"));
+  document.getElementById("wetland-fit").addEventListener("click", () =>
+    map.fitBounds(FIJI_BOUNDS, { padding: 24 }));
+}
+
 function initPipap() {
-  const rows = state.pipap.rows;
+  const rows = Array.isArray(state.pipap && state.pipap.rows) ? state.pipap.rows : [];
 
   const designations = [...new Set(rows.map(r => r.designation).filter(Boolean))].sort();
   const statuses = [...new Set(rows.map(r => r.status).filter(Boolean))].sort();
@@ -1150,7 +1303,7 @@ function initPipap() {
     .attr("class", "opt").attr("value", d => d).text(d => d);
 
   document.getElementById("pipap-sub").textContent =
-    `${state.pipap.count} sites · ${state.pipap.matched} matched to WDPA geometry`;
+    `${state.pipap.count || 0} sites · ${state.pipap.matched || 0} matched to WDPA geometry`;
 
   const style = {
     version: 8,
@@ -1284,7 +1437,7 @@ function renderPipap() {
     `);
 
   document.getElementById("pipap-sub").textContent =
-    `${rows.length} of ${state.pipap.count} sites · ${state.pipap.matched} matched to WDPA geometry`;
+    `${rows.length} of ${state.pipap.count || 0} sites · ${state.pipap.matched || 0} matched to WDPA geometry`;
 
   if (state.pipapMapReady) {
     const feats = rows.filter(d => d.matched && d.centroid).map(d => ({
