@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pacific Indicators Explorer · TimesFM forecasts to 2050</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="app-data.js"></script>
+<style>
+  :root {
+    --navy: #0b2e4f;
+    --accent: #0a7bc2;
+    --accent-soft: #e6f2fa;
+    --bg: #f3f5f8;
+    --card: #ffffff;
+    --border: #dde3ea;
+    --text: #1d2733;
+    --muted: #64748b;
+    --ok: #13795b;
+    --ok-soft: #e3f4ec;
+    --warn: #9a5b00;
+    --warn-soft: #fdf1dc;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Roboto", system-ui, sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+  button, input, select { font-family: inherit; font-size: inherit; color: inherit; }
+  .mono { font-family: "Roboto Mono", ui-monospace, monospace; font-size: 11px; }
+
+  /* Header */
+  header.app-bar {
+    background: var(--navy);
+    color: #fff;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { flex: none; }
+  .brand h1 { font-size: 18px; font-weight: 500; margin: 0; letter-spacing: .2px; }
+  .brand p { margin: 2px 0 0; font-size: 12px; color: #b8cadb; font-weight: 300; }
+  .header-actions { margin-left: auto; display: flex; gap: 8px; }
+  .btn {
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    transition: background .15s, border-color .15s;
+  }
+  .btn:hover { background: #f5f8fb; border-color: #c6d0db; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.ghost-dark { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.25); color: #fff; }
+  .btn.ghost-dark:hover { background: rgba(255,255,255,.16); }
+  .link-btn {
+    border: 0; background: none; color: var(--accent); cursor: pointer;
+    font-size: 12px; font-weight: 500; padding: 2px 4px; border-radius: 4px;
+  }
+  .link-btn:hover { background: var(--accent-soft); }
+
+  /* Layout */
+  .layout { flex: 1; display: grid; grid-template-columns: 380px 1fr; min-height: 0; }
+  aside {
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    min-height: 0;
+  }
+  main { overflow-y: auto; padding: 20px 24px 40px; min-height: 0; }
+  .side-section { padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .side-section:last-child { border-bottom: 0; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .section-head h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .8px;
+    color: var(--muted); font-weight: 700; margin: 0;
+  }
+  .section-head .actions { display: flex; gap: 2px; }
+
+  /* Countries */
+  .region-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .region-btn {
+    border: 1px dashed #b9c5d2; background: #fff; border-radius: 999px;
+    padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--muted);
+  }
+  .region-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .country-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .country-chip {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border); background: #fff; border-radius: 8px;
+    padding: 7px 10px; cursor: pointer; text-align: left; font-size: 13px;
+    transition: all .12s;
+  }
+  .country-chip:hover { border-color: #b6c3d1; }
+  .country-chip .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; opacity: .35; }
+  .country-chip .iso { margin-left: auto; color: var(--muted); }
+  .country-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+  .country-chip[aria-pressed="true"] .dot { opacity: 1; }
+
+  /* Indicator browser */
+  .search-wrap { position: relative; margin-bottom: 10px; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .search {
+    width: 100%; padding: 8px 10px 8px 32px; border: 1px solid var(--border);
+    border-radius: 8px; background: #fff; outline: none;
+  }
+  .search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .filter-row { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .filter-row label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  details.theme { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: #fff; }
+  details.theme > summary {
+    list-style: none; cursor: pointer; padding: 10px 12px;
+    display: flex; align-items: center; gap: 8px; font-weight: 500; user-select: none;
+  }
+  details.theme > summary::-webkit-details-marker { display: none; }
+  details.theme > summary .chev { transition: transform .15s; color: var(--muted); flex: none; }
+  details.theme[open] > summary .chev { transform: rotate(90deg); }
+  details.theme > summary .theme-swatch { width: 4px; height: 18px; border-radius: 2px; flex: none; }
+  details.theme > summary .count { margin-left: auto; font-size: 12px; color: var(--muted); font-weight: 400; }
+  details.theme > summary .sel-count {
+    background: var(--accent); color: #fff; border-radius: 999px; font-size: 11px;
+    padding: 1px 7px; font-weight: 500;
+  }
+  .ind-list { border-top: 1px solid var(--border); max-height: 420px; overflow-y: auto; }
+  .ind-item {
+    display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 8px 12px;
+    border-bottom: 1px solid #eef1f5; cursor: pointer; align-items: start;
+  }
+  .ind-item:last-child { border-bottom: 0; }
+  .ind-item:hover { background: #f7f9fb; }
+  .ind-item.selected { background: var(--accent-soft); }
+  .ind-item.unavailable .ind-title, .ind-item.unavailable .ind-dims { color: #9aa7b6; }
+  .ind-item input { margin: 2px 0 0; accent-color: var(--accent); cursor: pointer; }
+  .ind-title { font-size: 13px; line-height: 1.35; }
+  .ind-dims { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+  .ind-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; color: var(--muted); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500;
+    border-radius: 4px; padding: 1px 6px; white-space: nowrap;
+  }
+  .badge.unit { background: #eef1f5; color: #475569; }
+  .badge.avail { background: #eef1f5; color: #475569; }
+  .badge.fc { background: var(--ok-soft); color: var(--ok); }
+  .badge.hist { background: var(--warn-soft); color: var(--warn); }
+  .empty-note { padding: 12px; color: var(--muted); font-size: 12px; }
+
+  /* Main toolbar */
+  .toolbar {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 12px 16px; margin-bottom: 18px;
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  }
+  .toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 12px; cursor: pointer; background: #fff; font-size: 12px; font-weight: 500;
+    color: var(--muted);
+  }
+  .toggle[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .legend-key { display: flex; gap: 16px; align-items: center; margin-left: auto; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .legend-key span { display: inline-flex; align-items: center; gap: 6px; }
+  .selection-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .selection-bar .label { font-size: 12px; color: var(--muted); margin-right: 4px; }
+  .sel-chip {
+    display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 12px; max-width: 360px;
+  }
+  .sel-chip .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sel-chip button {
+    border: 0; background: #eef1f5; border-radius: 50%; width: 18px; height: 18px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; color: var(--muted); flex: none; padding: 0;
+  }
+  .sel-chip button:hover { background: #dbe2ea; color: var(--text); }
+
+  /* Panels */
+  .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(620px, 1fr)); gap: 18px; }
+  .panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); display: flex; flex-direction: column; min-width: 0;
+  }
+  .panel-head { padding: 14px 18px 4px; }
+  .panel-head h3 { margin: 0; font-size: 16px; font-weight: 500; line-height: 1.35; }
+  .panel-head .sub { color: var(--muted); font-size: 13px; margin-top: 3px; }
+  .panel-head .meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+  .panel-head .missing { font-size: 12px; color: var(--warn); margin-top: 6px; }
+  .chart { height: 440px; width: 100%; }
+  .chart-empty { height: 200px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+  details.summary { border-top: 1px solid var(--border); }
+  details.summary > summary {
+    cursor: pointer; padding: 10px 18px; font-size: 12px; font-weight: 500; color: var(--accent); user-select: none;
+  }
+  .table-wrap { overflow-x: auto; padding: 0 18px 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #eef1f5; vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th.num { text-align: right; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+  /* Empty state */
+  .empty-state {
+    background: var(--card); border: 1px dashed #c6d0db; border-radius: var(--radius);
+    padding: 48px 32px; text-align: center; color: var(--muted);
+  }
+  .empty-state h2 { color: var(--text); font-weight: 500; font-size: 18px; margin: 12px 0 6px; }
+  .examples { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+  .example {
+    border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 12px 14px;
+    cursor: pointer; text-align: left; width: 240px; transition: all .15s;
+  }
+  .example:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+  .example strong { display: block; color: var(--text); font-weight: 500; margin-bottom: 4px; }
+  .example span { font-size: 12px; }
+
+  footer.notes { color: var(--muted); font-size: 12px; margin-top: 24px; line-height: 1.6; max-width: 980px; }
+  .site-footer {
+    background: var(--navy); color: #b8cadb; font-size: 12px; font-weight: 300;
+    padding: 10px 24px; text-align: center; flex: none;
+  }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--navy); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: all .2s; z-index: 10;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .fatal { margin: 40px auto; max-width: 640px; background: #fff; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
+
+  @media (max-width: 1000px) {
+    html, body { height: auto; }
+    body { display: block; }
+    .layout { display: block; }
+    aside, main { overflow: visible; }
+    aside { border-right: 0; border-bottom: 1px solid var(--border); }
+    .panels { grid-template-columns: 1fr; }
+    .legend-key { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<header class="app-bar">
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+      <rect width="34" height="34" rx="8" fill="#0a7bc2"/>
+      <path d="M6 23 L12 17 L17 20 L23 11 L28 14" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M23 11 L28 14" stroke="#9fd3f5" stroke-width="2.2" stroke-dasharray="2 2.5" stroke-linecap="round"/>
+      <circle cx="12" cy="17" r="1.8" fill="#fff"/><circle cx="17" cy="20" r="1.8" fill="#fff"/><circle cx="23" cy="11" r="1.8" fill="#fff"/>
+    </svg>
+    <div>
+      <h1>Pacific Indicators Explorer</h1>
+      <p id="subtitle">Environment, climate, biodiversity, vulnerability &amp; disaster risk · UN Data Commons · TimesFM 3 forecasts to 2050</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn ghost-dark" id="btn-link" title="Copy a link to this view">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+      Copy link
+    </button>
+    <button class="btn ghost-dark" id="btn-csv" title="Download the charted data as CSV">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>
+      Download CSV
+    </button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <section class="side-section">
+      <div class="section-head">
+        <h2>Countries</h2>
+        <div class="actions">
+          <button class="link-btn" id="c-all">All</button>
+          <button class="link-btn" id="c-none">Clear</button>
+        </div>
+      </div>
+      <div class="region-row" id="regions"></div>
+      <div class="country-grid" id="countries"></div>
+    </section>
+    <section class="side-section">
+      <div class="section-head">
+        <h2>Indicators by thematic area</h2>
+        <div class="actions"><button class="link-btn" id="i-none">Clear</button></div>
+      </div>
+      <div class="search-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input class="search" id="search" type="search" placeholder="Search indicators, codes or themes…" autocomplete="off">
+      </div>
+      <div class="filter-row">
+        <label><input type="checkbox" id="only-fc"> Only with forecast</label>
+        <label><input type="checkbox" id="only-avail" checked> Hide unavailable for selection</label>
+      </div>
+      <div id="themes"></div>
+    </section>
+  </aside>
+
+  <main>
+    <div class="toolbar">
+      <div class="toggles" role="group" aria-label="Display options">
+        <button class="toggle" data-opt="forecast">Forecast</button>
+        <button class="toggle" data-opt="band">80% interval</button>
+        <button class="toggle" data-opt="markers">Observation markers</button>
+        <button class="toggle" data-opt="zero">Y-axis from zero</button>
+      </div>
+      <div class="legend-key">
+        <span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="#475569" stroke-width="2"/><circle cx="13" cy="5" r="3" fill="#fff" stroke="#475569" stroke-width="1.5"/></svg>Observed</span>
+        <span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="#475569" stroke-width="2" stroke-dasharray="4 3"/></svg>Forecast</span>
+        <span><svg width="26" height="12"><rect x="1" y="1" width="24" height="10" rx="2" fill="#475569" opacity=".18"/></svg>10–90% interval</span>
+      </div>
+    </div>
+    <div class="selection-bar" id="selection"></div>
+    <div id="content"></div>
+    <footer class="notes" id="notes"></footer>
+  </main>
+</div>
+<footer class="site-footer">© 2026 Agentic Pacific. All rights reserved.</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+  const D = window.APP_DATA;
+  const $ = (sel) => document.querySelector(sel);
+
+  if (!D || !window.echarts) {
+    document.body.innerHTML = `<div class="fatal"><h2>Data not available</h2>
+      <p>${!window.echarts ? "Could not load the ECharts library (internet connection required)." :
+      "<code>app-data.js</code> is missing. Generate it with:"}</p>
+      <pre>uv run python scripts/forecast_undata_indicators.py\nuv run python scripts/build_app_data.py</pre></div>`;
+    return;
+  }
+
+  // ---------- Constants ----------
+  const COUNTRY_COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
+                          "#e377c2", "#f2b701", "#0b2e4f", "#17becf", "#7f7f7f"];
+  const SERIES_COLORS = ["#0a7bc2", "#e8590c", "#2b8a3e", "#c2255c", "#7048e8", "#0c8599",
+                         "#e67700", "#5c940d", "#862e9c", "#495057", "#d6336c", "#1864ab"];
+  const SYMBOLS = ["circle", "rect", "triangle", "diamond", "roundRect", "pin", "arrow"];
+  const THEME_COLORS = {
+    "Environment": "#2b8a3e",
+    "Climate": "#e8590c",
+    "Biodiversity and conservation": "#0c8599",
+    "Vulnerable populations": "#7048e8",
+    "Disaster risk and impacts": "#c92a2a",
+  };
+  const REGIONS = {
+    Melanesia: ["FJI", "PNG", "SLB", "VUT"],
+    Micronesia: ["FSM", "KIR", "MHL", "NRU"],
+    Polynesia: ["COK", "NIU", "TON"],
+  };
+  const STATUS_LABELS = {
+    forecast: ["Forecast", "fc"],
+    skipped_insufficient_history: ["History only · too few observations", "hist"],
+    skipped_categorical: ["History only · categorical", "hist"],
+    skipped_already_at_target: ["History only", "hist"],
+  };
+
+  const countryCodes = Object.keys(D.countries);
+  const countryColor = Object.fromEntries(countryCodes.map((c, i) => [c, COUNTRY_COLORS[i % COUNTRY_COLORS.length]]));
+  const indicatorCodes = Object.keys(D.indicators);
+
+  // ---------- Helpers ----------
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const nf = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 4 });
+  const nfCompact = new Intl.NumberFormat(undefined, { notation: "compact", maximumSignificantDigits: 3 });
+  const fmt = (v) => (v == null || Number.isNaN(v) ? "–" : Math.abs(v) >= 1e6 ? nfCompact.format(v) : nf.format(v));
+  const fmtAxis = (v) => (Math.abs(v) >= 1e4 ? nfCompact.format(v) : nf.format(v));
+  const truncate = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
+
+  const parsed = {};
+  for (const [code, ind] of Object.entries(D.indicators)) {
+    const m = ind.title.match(/^(.*\S)\s*\[([^\[\]]*=[^\[\]]*)\]\s*$/);
+    const base = m ? m[1] : ind.title;
+    const dims = m ? m[2].split(/,\s*(?=[A-Z][^=,]*=)/).map((d) => d.split("=").slice(1).join("=").trim() || d) : [];
+    parsed[code] = { base, dims };
+  }
+  const shortLabel = (code) => {
+    const { dims } = parsed[code];
+    const base = parsed[code].base.replace(/^\[[^\]]+\]\s*/, "");
+    return dims.length ? `${truncate(base, 48)} · ${dims.join(", ")}` : truncate(base, 70);
+  };
+  const getSeries = (iso, code) => D.series[`${iso}|${code}`];
+  // When all indicators in a group are breakdowns of one base indicator, label them by their dimensions.
+  const commonBase = (codes) => codes.length > 1 && codes.every((c) => parsed[c].base === parsed[codes[0]].base) ? parsed[codes[0]].base : null;
+  const groupLabel = (code, codes) => commonBase(codes) ? (parsed[code].dims.join(", ") || "Total") : shortLabel(code);
+
+  // ---------- State ----------
+  const state = {
+    countries: new Set(),
+    indicators: [],
+    forecast: true,
+    band: true,
+    markers: true,
+    zero: false,
+    onlyFc: false,
+    onlyAvail: true,
+    search: "",
+    openThemes: new Set(),
+  };
+
+  function readHash() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    if (!params.has("c") && !params.has("i")) return false;
+    state.countries = new Set((params.get("c") || "").split(",").filter((c) => D.countries[c]));
+    state.indicators = (params.get("i") || "").split(",").filter((i) => D.indicators[i]);
+    for (const key of ["forecast", "band", "markers", "zero"]) {
+      if (params.has(key)) state[key] = params.get(key) === "1";
+    }
+    return true;
+  }
+
+  function writeHash() {
+    const params = new URLSearchParams();
+    params.set("c", [...state.countries].join(","));
+    params.set("i", state.indicators.join(","));
+    for (const key of ["forecast", "band", "markers", "zero"]) params.set(key, state[key] ? "1" : "0");
+    history.replaceState(null, "", "#" + params.toString());
+  }
+
+  function selectedCountries() {
+    return countryCodes.filter((c) => state.countries.has(c));
+  }
+
+  function availability(code) {
+    const pool = state.countries.size ? selectedCountries() : countryCodes;
+    let data = 0, fc = 0;
+    for (const iso of pool) {
+      const s = getSeries(iso, code);
+      if (s) { data++; if (s.f.length) fc++; }
+    }
+    return { data, fc, pool: pool.length };
+  }
+
+  // ---------- Sidebar ----------
+  function renderRegions() {
+    $("#regions").innerHTML = Object.entries(REGIONS)
+      .map(([name, list]) => `<button class="region-btn" data-region="${name}" title="${list.map((c) => D.countries[c]).join(", ")}">${name}</button>`)
+      .join("");
+  }
+
+  function renderCountries() {
+    $("#countries").innerHTML = countryCodes
+      .map((iso) => `<button class="country-chip" data-iso="${iso}" aria-pressed="${state.countries.has(iso)}">
+          <span class="dot" style="background:${countryColor[iso]}"></span>
+          <span>${esc(D.countries[iso])}</span><span class="iso mono">${iso}</span></button>`)
+      .join("");
+  }
+
+  function renderThemes() {
+    const q = state.search.trim().toLowerCase();
+    const selected = new Set(state.indicators);
+    const html = D.themes.map((theme) => {
+      const codes = indicatorCodes.filter((c) => D.indicators[c].theme === theme);
+      const items = codes.filter((code) => {
+        const ind = D.indicators[code];
+        if (q && !`${ind.title} ${code} ${theme} ${ind.unit}`.toLowerCase().includes(q)) return false;
+        const a = availability(code);
+        if (selected.has(code)) return true;
+        if (state.onlyFc && !a.fc) return false;
+        if (state.onlyAvail && !a.data) return false;
+        return true;
+      });
+      const selCount = codes.filter((c) => selected.has(c)).length;
+      const open = q ? items.length > 0 : state.openThemes.has(theme);
+      const list = items.length ? items.map((code) => {
+        const ind = D.indicators[code];
+        const { base, dims } = parsed[code];
+        const a = availability(code);
+        const isSel = selected.has(code);
+        return `<label class="ind-item${isSel ? " selected" : ""}${a.data ? "" : " unavailable"}" title="${esc(ind.title)}">
+            <input type="checkbox" data-code="${esc(code)}" ${isSel ? "checked" : ""}>
+            <div>
+              <div class="ind-title">${esc(base)}</div>
+              ${dims.length ? `<div class="ind-dims">${esc(dims.join(" · "))}</div>` : ""}
+              <div class="ind-meta">
+                <span class="badge unit">${esc(ind.unit)}</span>
+                <span class="badge avail" title="Countries with data (of ${state.countries.size ? "selected" : "all"})">${a.data}/${a.pool} countries</span>
+                ${a.fc ? `<span class="badge fc" title="Countries with a 2050 forecast">↗ ${a.fc} forecast</span>` : a.data ? `<span class="badge hist">History only</span>` : ""}
+                <span class="mono">${esc(code)}</span>
+              </div>
+            </div>
+          </label>`;
+      }).join("") : `<div class="empty-note">No matching indicators.</div>`;
+      return `<details class="theme" data-theme="${esc(theme)}" ${open ? "open" : ""}>
+          <summary>
+            <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+            <span class="theme-swatch" style="background:${THEME_COLORS[theme] || "#94a3b8"}"></span>
+            <span>${esc(theme)}</span>
+            ${selCount ? `<span class="sel-count">${selCount}</span>` : ""}
+            <span class="count">${items.length}${items.length !== codes.length ? ` of ${codes.length}` : ""}</span>
+          </summary>
+          <div class="ind-list">${list}</div>
+        </details>`;
+    }).join("");
+    const container = $("#themes");
+    const scroll = [...container.querySelectorAll(".ind-list")].map((el) => el.scrollTop);
+    container.innerHTML = html;
+    container.querySelectorAll(".ind-list").forEach((el, i) => { el.scrollTop = scroll[i] || 0; });
+  }
+
+  // ---------- Main ----------
+  let charts = [];
+
+  function renderToggles() {
+    document.querySelectorAll(".toggle").forEach((btn) => {
+      btn.setAttribute("aria-pressed", String(state[btn.dataset.opt]));
+      if (btn.dataset.opt === "band") btn.disabled = !state.forecast;
+    });
+  }
+
+  function renderSelection() {
+    const chips = [];
+    for (const code of state.indicators) {
+      chips.push(`<span class="sel-chip" title="${esc(D.indicators[code].title)}">
+          <span class="theme-swatch" style="width:8px;height:8px;border-radius:50%;background:${THEME_COLORS[D.indicators[code].theme] || "#94a3b8"}"></span>
+          <span class="txt">${esc(shortLabel(code))}</span>
+          <button data-remove="${esc(code)}" aria-label="Remove">✕</button></span>`);
+    }
+    $("#selection").innerHTML = chips.length
+      ? `<span class="label">${chips.length} indicator${chips.length > 1 ? "s" : ""} · ${state.countries.size} countr${state.countries.size === 1 ? "y" : "ies"}</span>${chips.join("")}`
+      : "";
+  }
+
+  function panelGroups() {
+    const groups = new Map();
+    for (const code of state.indicators) {
+      const unit = D.indicators[code].unit;
+      if (!groups.has(unit)) groups.set(unit, []);
+      groups.get(unit).push(code);
+    }
+    return [...groups.entries()].map(([unit, codes]) => ({ unit, codes }));
+  }
+
+  function buildSeriesDefs(group) {
+    const countries = selectedCountries();
+    const defs = [];
+    for (const code of group.codes) {
+      for (const iso of countries) {
+        const s = getSeries(iso, code);
+        if (s) defs.push({ iso, code, s });
+      }
+    }
+    const multiC = new Set(defs.map((d) => d.iso)).size > 1;
+    const multiI = new Set(defs.map((d) => d.code)).size > 1;
+    defs.forEach((d) => {
+      const ci = group.codes.indexOf(d.code);
+      d.color = multiC ? countryColor[d.iso] : SERIES_COLORS[ci % SERIES_COLORS.length];
+      d.symbol = multiC && multiI ? SYMBOLS[ci % SYMBOLS.length] : "circle";
+      d.name = multiC && multiI ? `${D.countries[d.iso]} · ${groupLabel(d.code, group.codes)}`
+        : multiI ? groupLabel(d.code, group.codes) : D.countries[d.iso];
+      d.key = `${d.iso}|${d.code}`;
+    });
+    return defs;
+  }
+
+  function buildOption(group, defs) {
+    const series = [];
+    const intervals = {};
+    let minYear = Infinity, maxYear = -Infinity;
+
+    for (const d of defs) {
+      const { h, f } = d.s;
+      if (!h.length) continue;
+      minYear = Math.min(minYear, h[0][0]);
+      maxYear = Math.max(maxYear, h[h.length - 1][0]);
+      series.push({
+        id: `h|${d.key}`, name: d.name, type: "line", color: d.color,
+        data: h.map(([y, v, interp]) => ({ value: [y, v], symbol: interp ? "none" : d.symbol })),
+        showSymbol: state.markers, symbolSize: 6,
+        itemStyle: { color: d.color, borderColor: d.color, borderWidth: 1.5 },
+        lineStyle: { width: 2.2, color: d.color },
+        z: 3,
+      });
+      if (!state.forecast || !f.length) continue;
+      const [ay, av] = h[h.length - 1];
+      maxYear = Math.max(maxYear, f[f.length - 1][0]);
+      intervals[d.key] = Object.fromEntries(f.map(([y, , lo, hi]) => [y, [lo, hi]]));
+      series.push({
+        id: `f|${d.key}`, name: d.name, type: "line", color: d.color,
+        data: [[ay, av], ...f.map(([y, v]) => [y, v])],
+        showSymbol: false, symbol: "none",
+        lineStyle: { width: 2, type: [6, 4], color: d.color },
+        z: 3,
+      });
+      if (state.band) {
+        const pts = [[ay, av, av], ...f.map(([y, , lo, hi]) => [y, lo, hi])];
+        const opacity = defs.length > 4 ? 0.08 : 0.15;
+        series.push({
+          id: `b|${d.key}`, name: d.name, type: "custom", silent: true, z: 1, clip: true,
+          data: pts, encode: { x: 0, y: [1, 2] },
+          tooltip: { show: false },
+          renderItem(params, api) {
+            if (params.dataIndex !== 0) return null;
+            const upper = pts.map((p) => api.coord([p[0], p[2]]));
+            const lower = pts.map((p) => api.coord([p[0], p[1]])).reverse();
+            return {
+              type: "polygon",
+              shape: { points: upper.concat(lower) },
+              style: { fill: d.color, opacity },
+              silent: true,
+            };
+          },
+        });
+      }
+    }
+
+    const unit = group.unit;
+    return {
+      animationDuration: 350,
+      textStyle: { fontFamily: "Roboto, sans-serif" },
+      grid: { left: 16, right: 28, top: 44, bottom: 96, containLabel: true },
+      toolbox: {
+        right: 16, top: 4, itemSize: 14,
+        feature: {
+          dataZoom: { yAxisIndex: "none", filterMode: "none", title: { zoom: "Zoom", back: "Undo zoom" } },
+          restore: { title: "Reset" },
+          saveAsImage: { title: "Save PNG", pixelRatio: 2, name: `pacific-${group.codes[0]}`, backgroundColor: "#fff" },
+        },
+      },
+      tooltip: {
+        trigger: "axis",
+        confine: true,
+        axisPointer: { type: "line", snap: true, lineStyle: { color: "#94a3b8" } },
+        backgroundColor: "rgba(255,255,255,.97)",
+        borderColor: "#dde3ea",
+        textStyle: { color: "#1d2733", fontSize: 12 },
+        extraCssText: "box-shadow:0 4px 16px rgba(16,24,40,.12);border-radius:8px;max-width:440px;white-space:normal;",
+        formatter(params) {
+          if (!params.length) return "";
+          const year = Math.round(params[0].axisValue);
+          const rows = [];
+          for (const p of params) {
+            const [kind, ...rest] = p.seriesId.split("|");
+            const key = rest.join("|");
+            if (kind !== "h" && kind !== "f") continue;
+            if (!p.value || p.value[0] !== year) continue;
+            if (kind === "f" && p.dataIndex === 0) continue;
+            const ci = kind === "f" && intervals[key] && intervals[key][year];
+            rows.push({ v: p.value[1], html: `<div style="display:flex;gap:8px;align-items:baseline;margin:3px 0">
+                <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${p.color};flex:none"></span>
+                <span style="flex:1">${esc(p.seriesName)}${kind === "f" ? ' <span style="color:#9a5b00;font-size:11px">forecast</span>' : ""}</span>
+                <b style="font-variant-numeric:tabular-nums">${fmt(p.value[1])}</b>
+              </div>${ci ? `<div style="margin:-2px 0 4px 17px;color:#64748b;font-size:11px">10–90%: ${fmt(ci[0])} – ${fmt(ci[1])}</div>` : ""}` });
+          }
+          if (!rows.length) return "";
+          rows.sort((a, b) => b.v - a.v);
+          return `<div style="font-weight:500;margin-bottom:4px">${year} <span style="color:#64748b;font-weight:400">· ${esc(unit)}</span></div>${rows.map((r) => r.html).join("")}`;
+        },
+      },
+      legend: {
+        type: "scroll", bottom: 34, left: 16, right: 16, icon: "roundRect", itemWidth: 14, itemHeight: 8,
+        textStyle: { fontSize: 12, color: "#334155" },
+        formatter: (name) => truncate(name, 60),
+        tooltip: { show: true },
+      },
+      xAxis: {
+        type: "value", min: minYear, max: maxYear, minInterval: 1,
+        axisLabel: { formatter: (v) => String(v), color: "#64748b" },
+        axisLine: { lineStyle: { color: "#cbd5e1" } },
+        splitLine: { show: false },
+        axisTick: { show: true },
+      },
+      yAxis: {
+        type: "value", scale: !state.zero,
+        name: unit, nameLocation: "end", nameGap: 14,
+        nameTextStyle: { color: "#64748b", align: "left", fontSize: 12 },
+        axisLabel: { formatter: fmtAxis, color: "#64748b" },
+        splitLine: { lineStyle: { color: "#eef1f5" } },
+      },
+      dataZoom: [
+        { type: "inside", xAxisIndex: 0, filterMode: "none", zoomOnMouseWheel: "ctrl", moveOnMouseWheel: false },
+        { type: "slider", xAxisIndex: 0, filterMode: "none", height: 18, bottom: 8, borderColor: "#dde3ea",
+          labelFormatter: (v) => String(Math.round(v)), brushSelect: false },
+      ],
+      series,
+    };
+  }
+
+  function summaryTable(defs) {
+    const rows = defs.map((d) => {
+      const { h, f, s } = d.s;
+      const obs = h.filter((p) => !p[2]);
+      const last = obs[obs.length - 1];
+      const end = f[f.length - 1];
+      const [label, cls] = STATUS_LABELS[s] || [s, "hist"];
+      return `<tr>
+          <td><span class="swatch" style="background:${d.color}"></span>${esc(D.countries[d.iso])}</td>
+          <td title="${esc(D.indicators[d.code].title)}">${esc(shortLabel(d.code))}</td>
+          <td class="num">${obs.length ? `${obs[0][0]}–${last[0]}` : "–"} <span style="color:#94a3b8">(${obs.length})</span></td>
+          <td class="num">${last ? `${fmt(last[1])} <span style="color:#94a3b8">(${last[0]})</span>` : "–"}</td>
+          <td class="num">${end ? `<b>${fmt(end[1])}</b> <span style="color:#94a3b8">${fmt(end[2])} – ${fmt(end[3])}</span>` : "–"}</td>
+          <td><span class="badge ${cls}">${esc(label)}</span></td>
+        </tr>`;
+    }).join("");
+    return `<details class="summary"><summary>Series summary (${defs.length})</summary>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Country</th><th>Indicator</th><th class="num">Observed (n)</th><th class="num">Latest</th><th class="num">${D.target_year || 2050} forecast (10–90%)</th><th>Status</th></tr></thead>
+          <tbody>${rows}</tbody></table></div></details>`;
+  }
+
+  function panelHeader(group, defs) {
+    const themes = [...new Set(group.codes.map((c) => D.indicators[c].theme))];
+    const withData = new Set(defs.map((d) => d.iso));
+    const missing = selectedCountries().filter((c) => !withData.has(c));
+    const themeBadges = themes.map((t) => `<span class="badge" style="background:${THEME_COLORS[t] || "#94a3b8"}1a;color:${THEME_COLORS[t] || "#475569"}">${esc(t)}</span>`).join("");
+    let title, sub;
+    if (group.codes.length === 1) {
+      const code = group.codes[0];
+      title = esc(parsed[code].base);
+      sub = parsed[code].dims.length ? esc(parsed[code].dims.join(" · ")) : "";
+    } else if (commonBase(group.codes)) {
+      title = esc(commonBase(group.codes));
+      sub = `${group.codes.length} breakdowns: ${group.codes.map((c) => esc(groupLabel(c, group.codes))).join(" · ")}`;
+    } else {
+      title = `${group.codes.length} indicators <span style="color:var(--muted);font-weight:400">· ${esc(group.unit)}</span>`;
+      sub = group.codes.map((c) => esc(shortLabel(c))).join("<br>");
+    }
+    const codes = group.codes.map((c) => `<span class="mono" style="color:var(--muted)">${esc(c)}</span>`).join(" ");
+    return `<div class="panel-head">
+        <h3>${title}</h3>
+        ${sub ? `<div class="sub">${sub}</div>` : ""}
+        <div class="meta"><span class="badge unit">${esc(group.unit)}</span>${themeBadges}${codes}</div>
+        ${missing.length && defs.length ? `<div class="missing">No data for: ${missing.map((c) => esc(D.countries[c])).join(", ")}</div>` : ""}
+      </div>`;
+  }
+
+  const EXAMPLES = [
+    { title: "Forest cover across the Pacific", text: "Forest area (% of land) for all 11 countries", c: countryCodes, i: ["AG_LND_FRST"] },
+    { title: "Air quality in Fiji", text: "PM2.5 by degree of urbanisation", c: ["FJI"], i: ["EN_ATM_PM25", "EN_ATM_PM25.URBANIZATION--DOU_U", "EN_ATM_PM25.URBANIZATION--DOU_TSUB", "EN_ATM_PM25.URBANIZATION--DOU_R"] },
+    { title: "Disaster impacts in Melanesia", text: "Deaths, missing & affected per 100,000", c: REGIONS.Melanesia, i: ["VC_DSR_MTMP", "VC_DSR_DAFF"] },
+  ].map((e) => ({ ...e, i: e.i.filter((code) => D.indicators[code]) })).filter((e) => e.i.length);
+
+  function renderContent() {
+    charts.forEach((c) => c.dispose());
+    charts = [];
+    const content = $("#content");
+
+    if (!state.countries.size || !state.indicators.length) {
+      const need = !state.countries.size && !state.indicators.length ? "Select one or more countries and indicators"
+        : !state.countries.size ? "Select at least one country" : "Select at least one indicator";
+      content.innerHTML = `<div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>
+          <h2>${need}</h2>
+          <p>Pick countries and indicators from the left panel. Indicators that share a unit are combined on one chart; others get their own panel.</p>
+          <div class="examples">${EXAMPLES.map((e, k) => `<button class="example" data-example="${k}"><strong>${esc(e.title)}</strong><span>${esc(e.text)}</span></button>`).join("")}</div>
+        </div>`;
+      return;
+    }
+
+    const groups = panelGroups();
+    content.innerHTML = `<div class="panels">${groups.map((_, k) => `<section class="panel" id="panel-${k}"></section>`).join("")}</div>`;
+    groups.forEach((group, k) => {
+      const el = $(`#panel-${k}`);
+      const defs = buildSeriesDefs(group);
+      if (!defs.length) {
+        el.innerHTML = panelHeader(group, defs) +
+          `<div class="chart-empty">No data for the selected countries.</div>`;
+        return;
+      }
+      el.innerHTML = panelHeader(group, defs) + `<div class="chart"></div>` + summaryTable(defs);
+      const chart = echarts.init(el.querySelector(".chart"), null, { renderer: "canvas" });
+      chart.setOption(buildOption(group, defs), true);
+      charts.push(chart);
+    });
+  }
+
+  function renderNotes() {
+    $("#notes").innerHTML = `Source: UN Data Commons (UN Statistics Division) via the UN Data MCP server.
+      Forecasts: zero-shot <b>${esc(D.model)}</b> to ${D.target_year || 2050}, shown as median (dashed) with a 10th–90th percentile interval.
+      Series with fewer than 5 observed years or categorical status flags are shown as history only. Gaps between observed years are linearly interpolated (no marker).
+      Long-horizon forecasts from short histories are indicative only. Data bundle generated ${esc(D.generated)}.
+      Tip: drag the slider or hold <kbd>Ctrl</kbd> and scroll to zoom; click legend entries to hide series.`;
+  }
+
+  function render({ sidebar = true } = {}) {
+    renderToggles();
+    renderCountries();
+    if (sidebar) renderThemes();
+    renderSelection();
+    renderContent();
+    writeHash();
+  }
+
+  // ---------- Events ----------
+  $("#countries").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-iso]");
+    if (!btn) return;
+    const iso = btn.dataset.iso;
+    state.countries.has(iso) ? state.countries.delete(iso) : state.countries.add(iso);
+    render();
+  });
+  $("#regions").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-region]");
+    if (!btn) return;
+    state.countries = new Set(REGIONS[btn.dataset.region].filter((c) => D.countries[c]));
+    render();
+  });
+  $("#c-all").addEventListener("click", () => { state.countries = new Set(countryCodes); render(); });
+  $("#c-none").addEventListener("click", () => { state.countries.clear(); render(); });
+  $("#i-none").addEventListener("click", () => { state.indicators = []; render(); });
+
+  $("#themes").addEventListener("change", (e) => {
+    const code = e.target.dataset.code;
+    if (!code) return;
+    if (e.target.checked) { if (!state.indicators.includes(code)) state.indicators.push(code); }
+    else state.indicators = state.indicators.filter((c) => c !== code);
+    render();
+  });
+  $("#themes").addEventListener("toggle", (e) => {
+    const theme = e.target.dataset && e.target.dataset.theme;
+    if (!theme || state.search) return;
+    e.target.open ? state.openThemes.add(theme) : state.openThemes.delete(theme);
+  }, true);
+
+  let searchTimer;
+  $("#search").addEventListener("input", (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { state.search = e.target.value; renderThemes(); }, 120);
+  });
+  $("#only-fc").addEventListener("change", (e) => { state.onlyFc = e.target.checked; renderThemes(); });
+  $("#only-avail").addEventListener("change", (e) => { state.onlyAvail = e.target.checked; renderThemes(); });
+
+  document.querySelectorAll(".toggle").forEach((btn) => btn.addEventListener("click", () => {
+    state[btn.dataset.opt] = !state[btn.dataset.opt];
+    render({ sidebar: false });
+  }));
+
+  $("#selection").addEventListener("click", (e) => {
+    const code = e.target.closest("[data-remove]")?.dataset.remove;
+    if (!code) return;
+    state.indicators = state.indicators.filter((c) => c !== code);
+    render();
+  });
+
+  $("#content").addEventListener("click", (e) => {
+    const k = e.target.closest("[data-example]")?.dataset.example;
+    if (k == null) return;
+    const ex = EXAMPLES[+k];
+    state.countries = new Set(ex.c);
+    state.indicators = [...ex.i];
+    ex.i.forEach((c) => state.openThemes.add(D.indicators[c].theme));
+    render();
+  });
+
+  function toast(msg) {
+    const el = $("#toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  $("#btn-link").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(location.href); toast("Link copied to clipboard"); }
+    catch { toast("Copy failed – use the address bar URL"); }
+  });
+
+  $("#btn-csv").addEventListener("click", () => {
+    if (!state.countries.size || !state.indicators.length) { toast("Nothing selected to download"); return; }
+    const q = (v) => (v == null ? "" : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+    const lines = [["country", "iso3", "thematic_area", "indicator_name", "indicator_title", "unit", "year", "value", "lower_q10", "upper_q90", "type"].join(",")];
+    for (const code of state.indicators) {
+      const ind = D.indicators[code];
+      for (const iso of selectedCountries()) {
+        const s = getSeries(iso, code);
+        if (!s) continue;
+        const base = [D.countries[iso], iso, ind.theme, code, ind.title, ind.unit];
+        for (const [y, v, interp] of s.h) lines.push([...base, y, v, "", "", interp ? "interpolated" : "observed"].map(q).join(","));
+        for (const [y, v, lo, hi] of s.f) lines.push([...base, y, v, lo, hi, "forecast"].map(q).join(","));
+      }
+    }
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "pacific-indicators-selection.csv" });
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast(`Downloaded ${lines.length - 1} rows`);
+  });
+
+  new ResizeObserver(() => charts.forEach((c) => c.resize())).observe($("main"));
+  window.addEventListener("hashchange", () => { if (readHash()) render(); });
+
+  // ---------- Init ----------
+  if (!readHash()) {
+    state.countries = new Set(REGIONS.Melanesia.filter((c) => D.countries[c]));
+    state.indicators = ["AG_LND_FRST"].filter((c) => D.indicators[c]);
+  }
+  renderRegions();
+  renderNotes();
+  render();
+})();
+</script>
+</body>
+</html>
