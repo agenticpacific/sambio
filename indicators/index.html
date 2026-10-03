@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pacific Indicators Explorer · TimesFM forecasts to 2050</title>
+<title>Pacific Indicators Explorer w/ Forecasts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
@@ -53,7 +53,22 @@
   .brand svg { flex: none; }
   .brand h1 { font-size: 18px; font-weight: 500; margin: 0; letter-spacing: .2px; }
   .brand p { margin: 2px 0 0; font-size: 12px; color: #b8cadb; font-weight: 300; }
-  .header-actions { margin-left: auto; display: flex; gap: 8px; }
+  .header-stats { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .header-stats .stat {
+    --c: #4dabf7;
+    background: color-mix(in srgb, var(--c) 18%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+    border-top: 3px solid var(--c); border-radius: 8px;
+    padding: 3px 10px 4px; text-align: center; min-width: 64px; line-height: 1.15;
+  }
+  .header-stats .stat b { display: block; font-size: 16px; font-weight: 500; color: #fff; }
+  .header-stats .stat span { font-size: 10px; color: color-mix(in srgb, var(--c) 45%, #fff); text-transform: uppercase; letter-spacing: .5px; }
+  .header-actions { display: flex; gap: 8px; }
+  @media (min-width: 1100px) {
+    header.app-bar { flex-wrap: nowrap; }
+    .brand { flex: 1 1 auto; min-width: 0; }
+    .header-stats, .header-actions { flex: none; flex-wrap: nowrap; }
+  }
   .btn {
     border: 1px solid var(--border);
     background: #fff;
@@ -215,16 +230,38 @@
   th.num { text-align: right; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
 
+  /* NDC commitments */
+  .ndc-panel { margin-top: 18px; }
+  .ndc-panel .panel-head { padding-bottom: 12px; }
+  .ndc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; padding: 0 18px 18px; }
+  .ndc-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 12.5px; background: #fbfcfd; }
+  .ndc-card h4 { margin: 0 0 4px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .ndc-card .when { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  .ndc-card .statement { line-height: 1.45; margin: 0 0 8px; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .ndc-card dl { display: grid; grid-template-columns: 128px 1fr; gap: 3px 10px; margin: 0; }
+  .ndc-card dt { color: var(--muted); }
+  .ndc-card dd { margin: 0; }
+  .ndc-card .na { color: #a0aab6; }
+  .ndc-card details { margin-top: 8px; }
+  .ndc-card details summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+  .ndc-card details dl { margin-top: 6px; }
+
   /* Empty state */
   .empty-state {
     background: var(--card); border: 1px dashed #c6d0db; border-radius: var(--radius);
     padding: 48px 32px; text-align: center; color: var(--muted);
   }
   .empty-state h2 { color: var(--text); font-weight: 500; font-size: 18px; margin: 12px 0 6px; }
-  .examples { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+  .example-group { margin-top: 22px; text-align: left; }
+  .example-group h4 {
+    margin: 0 0 8px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--c); display: flex; align-items: center; gap: 8px;
+  }
+  .example-group h4::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--c); }
+  .examples { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .example {
     border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 12px 14px;
-    cursor: pointer; text-align: left; width: 240px; transition: all .15s;
+    cursor: pointer; text-align: left; transition: all .15s; border-left: 3px solid var(--c, var(--border));
   }
   .example:hover { border-color: var(--accent); box-shadow: var(--shadow); }
   .example strong { display: block; color: var(--text); font-weight: 500; margin-bottom: 4px; }
@@ -264,10 +301,11 @@
       <circle cx="12" cy="17" r="1.8" fill="#fff"/><circle cx="17" cy="20" r="1.8" fill="#fff"/><circle cx="23" cy="11" r="1.8" fill="#fff"/>
     </svg>
     <div>
-      <h1>Pacific Indicators Explorer</h1>
-      <p id="subtitle">Environment, climate, biodiversity, vulnerability &amp; disaster risk · UN Data Commons · TimesFM 3 forecasts to 2050</p>
+      <h1>Pacific Indicators Explorer /w Forecasted Projections</h1>
+      <p id="subtitle">Official Environment, Climate, Emissions, Biodiversity, Energy, Vulnerability &amp; Disaster Risk and other Development Indicators · Times Foundation Model 3 Forecasts to 2050</p>
     </div>
   </div>
+  <div class="header-stats" id="header-stats" aria-label="Dataset summary"></div>
   <div class="header-actions">
     <button class="btn ghost-dark" id="btn-link" title="Copy a link to this view">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
@@ -317,6 +355,7 @@
         <button class="toggle" data-opt="band">80% interval</button>
         <button class="toggle" data-opt="markers">Observation markers</button>
         <button class="toggle" data-opt="zero">Y-axis from zero</button>
+        <button class="toggle" data-opt="ndc" title="Show NDC commitments for the selected countries">NDC commitments</button>
       </div>
       <div class="legend-key">
         <span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="#475569" stroke-width="2"/><circle cx="13" cy="5" r="3" fill="#fff" stroke="#475569" stroke-width="1.5"/></svg>Observed</span>
@@ -336,6 +375,18 @@
 (() => {
   "use strict";
   const D = window.APP_DATA;
+  {
+    const series = Object.values(D.series);
+    const stats = [
+      ["Indicators", Object.keys(D.indicators).length, "Distinct indicators (including breakdowns)", "#4dabf7"],
+      ["Datasets", series.length, "Country × indicator time series", "#38d9a9"],
+      ["Forecasts", series.filter((x) => x.f && x.f.length).length, `Series forecast to ${D.target_year} with TimesFM`, "#ffa94d"],
+      ["Countries", Object.keys(D.countries).length, "Pacific island countries", "#da77f2"],
+      ["Themes", D.themes.length, "Thematic areas", "#ffd43b"],
+    ];
+    document.getElementById("header-stats").innerHTML = stats
+      .map(([l, n, t, c]) => `<div class="stat" style="--c:${c}" title="${t}"><b>${n.toLocaleString()}</b><span>${l}</span></div>`).join("");
+  }
   const $ = (sel) => document.querySelector(sel);
 
   if (!D || !window.echarts) {
@@ -348,21 +399,28 @@
 
   // ---------- Constants ----------
   const COUNTRY_COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
-                          "#e377c2", "#f2b701", "#0b2e4f", "#17becf", "#7f7f7f"];
+                          "#e377c2", "#f2b701", "#0b2e4f", "#17becf", "#7f7f7f",
+                          "#6b8e23", "#b8336a", "#4b0082"];
   const SERIES_COLORS = ["#0a7bc2", "#e8590c", "#2b8a3e", "#c2255c", "#7048e8", "#0c8599",
                          "#e67700", "#5c940d", "#862e9c", "#495057", "#d6336c", "#1864ab"];
   const SYMBOLS = ["circle", "rect", "triangle", "diamond", "roundRect", "pin", "arrow"];
   const THEME_COLORS = {
     "Environment": "#2b8a3e",
     "Climate": "#e8590c",
+    "Greenhouse gas emissions": "#862e9c",
     "Biodiversity and conservation": "#0c8599",
     "Vulnerable populations": "#7048e8",
     "Disaster risk and impacts": "#c92a2a",
+    "Energy and climate finance": "#f08c00",
+    "Oceans and coasts": "#1971c2",
+    "Water and sanitation": "#15aabf",
+    "Resources and waste": "#7c5c3b",
+    "Food security": "#5c940d",
   };
   const REGIONS = {
     Melanesia: ["FJI", "PNG", "SLB", "VUT"],
-    Micronesia: ["FSM", "KIR", "MHL", "NRU"],
-    Polynesia: ["COK", "NIU", "TON"],
+    Micronesia: ["FSM", "KIR", "MHL", "NRU", "PLW"],
+    Polynesia: ["COK", "NIU", "WSM", "TON", "TUV"],
   };
   const STATUS_LABELS = {
     forecast: ["Forecast", "fc"],
@@ -408,6 +466,7 @@
     band: true,
     markers: true,
     zero: false,
+    ndc: false,
     onlyFc: false,
     onlyAvail: true,
     search: "",
@@ -419,7 +478,7 @@
     if (!params.has("c") && !params.has("i")) return false;
     state.countries = new Set((params.get("c") || "").split(",").filter((c) => D.countries[c]));
     state.indicators = (params.get("i") || "").split(",").filter((i) => D.indicators[i]);
-    for (const key of ["forecast", "band", "markers", "zero"]) {
+    for (const key of ["forecast", "band", "markers", "zero", "ndc"]) {
       if (params.has(key)) state[key] = params.get(key) === "1";
     }
     return true;
@@ -429,7 +488,7 @@
     const params = new URLSearchParams();
     params.set("c", [...state.countries].join(","));
     params.set("i", state.indicators.join(","));
-    for (const key of ["forecast", "band", "markers", "zero"]) params.set(key, state[key] ? "1" : "0");
+    for (const key of ["forecast", "band", "markers", "zero", "ndc"]) params.set(key, state[key] ? "1" : "0");
     history.replaceState(null, "", "#" + params.toString());
   }
 
@@ -454,11 +513,12 @@
       .join("");
   }
 
+  const SHORT_NAMES = { PNG: "PNG", FSM: "FSM" };
   function renderCountries() {
     $("#countries").innerHTML = countryCodes
-      .map((iso) => `<button class="country-chip" data-iso="${iso}" aria-pressed="${state.countries.has(iso)}">
+      .map((iso) => `<button class="country-chip" data-iso="${iso}" aria-pressed="${state.countries.has(iso)}" title="${esc(D.countries[iso])}">
           <span class="dot" style="background:${countryColor[iso]}"></span>
-          <span>${esc(D.countries[iso])}</span><span class="iso mono">${iso}</span></button>`)
+          <span>${esc(SHORT_NAMES[iso] || D.countries[iso])}</span>${SHORT_NAMES[iso] === iso ? "" : `<span class="iso mono">${iso}</span>`}</button>`)
       .join("");
   }
 
@@ -732,19 +792,73 @@
       sub = group.codes.map((c) => esc(shortLabel(c))).join("<br>");
     }
     const codes = group.codes.map((c) => `<span class="mono" style="color:var(--muted)">${esc(c)}</span>`).join(" ");
+    const sources = [...new Set(group.codes.map((c) => D.indicators[c].src).filter(Boolean))]
+      .map((src) => `<span class="badge" style="background:#f1f3f5;color:#495057">${esc(src)}</span>`).join("");
     return `<div class="panel-head">
         <h3>${title}</h3>
         ${sub ? `<div class="sub">${sub}</div>` : ""}
-        <div class="meta"><span class="badge unit">${esc(group.unit)}</span>${themeBadges}${codes}</div>
+        <div class="meta"><span class="badge unit">${esc(group.unit)}</span>${themeBadges}${sources}${codes}</div>
         ${missing.length && defs.length ? `<div class="missing">No data for: ${missing.map((c) => esc(D.countries[c])).join(", ")}</div>` : ""}
       </div>`;
   }
 
   const EXAMPLES = [
-    { title: "Forest cover across the Pacific", text: "Forest area (% of land) for all 11 countries", c: countryCodes, i: ["AG_LND_FRST"] },
-    { title: "Air quality in Fiji", text: "PM2.5 by degree of urbanisation", c: ["FJI"], i: ["EN_ATM_PM25", "EN_ATM_PM25.URBANIZATION--DOU_U", "EN_ATM_PM25.URBANIZATION--DOU_TSUB", "EN_ATM_PM25.URBANIZATION--DOU_R"] },
-    { title: "Disaster impacts in Melanesia", text: "Deaths, missing & affected per 100,000", c: REGIONS.Melanesia, i: ["VC_DSR_MTMP", "VC_DSR_DAFF"] },
+    // Climate
+    { g: "Climate", title: "Warming seas in Micronesia", text: "Sea surface temperature anomaly (SPC)", c: REGIONS.Micronesia, i: ["PDH_SST_ANOM"] },
+    { g: "Climate", title: "Land warming in Melanesia", text: "Surface temperature anomaly (SPC)", c: REGIONS.Melanesia, i: ["PDH_ST_ANOM"] },
+    { g: "Climate", title: "Rainfall extremes on atolls", text: "Precipitation anomaly: Kiribati, Tuvalu, Marshall Islands", c: ["KIR", "TUV", "MHL"], i: ["PDH_RAIN_ANOM"] },
+    { g: "Climate", title: "GHG emissions per capita", text: "t CO₂e per person for all countries (OWID)", c: countryCodes, i: ["OWID_GHG_PER_CAPITA"] },
+    { g: "Climate", title: "Fiji emissions by sector", text: "Energy, agriculture, waste & land use (Climate Watch)", c: ["FJI"], i: ["CW_GHG_ENERGY", "CW_GHG_AGRICULTURE", "CW_GHG_WASTE", "CW_GHG_LAND_USE_LAND_USE_CHANGE_AND_FORESTRY"] },
+    { g: "Climate", title: "Renewable energy transition", text: "Renewable share of final energy, all countries", c: countryCodes, i: ["EG_FEC_RNEW"] },
+    { g: "Climate", title: "Fossil-fuel subsidies", text: "Subsidies as % of GDP, Melanesia", c: REGIONS.Melanesia, i: ["ER_FFS_CMPT_GDP"] },
+    // Environment
+    { g: "Environment", title: "Forest cover across the Pacific", text: "Forest area (% of land) for all countries", c: countryCodes, i: ["AG_LND_FRST"] },
+    { g: "Environment", title: "Air quality in Fiji", text: "PM2.5 by degree of urbanisation", c: ["FJI"], i: ["EN_ATM_PM25", "EN_ATM_PM25.URBANIZATION--DOU_U", "EN_ATM_PM25.URBANIZATION--DOU_TSUB", "EN_ATM_PM25.URBANIZATION--DOU_R"] },
+    { g: "Environment", title: "Mangroves in Melanesia", text: "Mangrove area, km² (Fiji, Solomon Islands, Vanuatu)", c: ["FJI", "SLB", "VUT"], i: ["EN_WBE_MANGN"] },
+    { g: "Environment", title: "Protecting key biodiversity areas", text: "Marine & terrestrial KBAs protected, Fiji", c: ["FJI"], i: ["ER_MRN_MPA", "ER_PTD_TERR"] },
+    { g: "Environment", title: "Species extinction risk", text: "Red List Index for all countries", c: countryCodes, i: ["ER_RSK_LST"] },
+    { g: "Environment", title: "Water & sanitation in Fiji", text: "Basic drinking water and sanitation access", c: ["FJI"], i: ["SP_ACS_BSRVH2O", "SP_ACS_BSRVSAN"] },
+    // Food security
+    { g: "Food security", title: "Undernourishment", text: "Prevalence of undernourishment, 6 countries", c: ["FJI", "PNG", "SLB", "VUT", "KIR", "WSM"], i: ["SN_ITK_DEFC"] },
+    { g: "Food security", title: "Food insecurity (FIES)", text: "Moderate/severe and severe, Kiribati & Samoa", c: ["KIR", "WSM"], i: ["AG_PRD_FIESMS", "AG_PRD_FIESS"] },
+    { g: "Food security", title: "Fisheries in the economy", text: "Sustainable fisheries as % of GDP", c: ["FJI", "KIR", "WSM", "TON", "COK", "VUT", "PLW"], i: ["EN_SCP_FSHGDP"] },
+    { g: "Food security", title: "Agriculture emissions", text: "Agricultural GHG emissions, Melanesia (Climate Watch)", c: REGIONS.Melanesia, i: ["CW_GHG_AGRICULTURE"] },
+    { g: "Food security", title: "Aid for agriculture", text: "Official flows for agriculture, Melanesia", c: REGIONS.Melanesia, i: ["DC_TOF_AGRL"] },
+    // Disaster risk
+    { g: "Disaster risk and impacts", title: "Disaster impacts in Melanesia", text: "Deaths, missing & affected per 100,000", c: REGIONS.Melanesia, i: ["VC_DSR_MTMP", "VC_DSR_DAFF"] },
+    { g: "Disaster risk and impacts", title: "Economic losses from disasters", text: "Direct economic loss as % of GDP, all countries", c: countryCodes, i: ["VC_DSR_LSGP"] },
   ].map((e) => ({ ...e, i: e.i.filter((code) => D.indicators[code]) })).filter((e) => e.i.length);
+  const EXAMPLE_GROUPS = [...new Set(EXAMPLES.map((e) => e.g))];
+
+  const NA_RE = /^(not specified|not applicable|no document submitted|analysis in progress)$/i;
+  const ndcValue = (v) => (!v ? `<span class="na">–</span>` : NA_RE.test(v) ? `<span class="na">${esc(v)}</span>` : esc(v));
+  const NDC_KEY_FIELDS = ["GHG target type", "Target year", "Conditionality", "Sectors covered", "Gases covered",
+    "Financial requirements (billion USD)", "Paris Agreement status", "Biennial Transparency Report"];
+
+  function ndcPanel() {
+    if (!state.ndc || !D.ndc || !state.countries.size) return "";
+    const cards = selectedCountries().filter((iso) => D.ndc.countries[iso]).map((iso) => {
+      const n = D.ndc.countries[iso];
+      const statement = n["2025 NDC statement"] || n["Previous NDC statement"] || n["GHG target"] || "";
+      const keyRows = NDC_KEY_FIELDS.map((f) => `<dt>${esc(f.replace(" (billion USD)", " (USD bn)"))}</dt><dd>${ndcValue(n[f])}</dd>`).join("");
+      const allRows = D.ndc.fields.filter((f) => !NDC_KEY_FIELDS.includes(f))
+        .map((f) => `<dt>${esc(f)}</dt><dd>${ndcValue(n[f])}</dd>`).join("");
+      return `<div class="ndc-card">
+          <h4><span class="swatch" style="background:${countryColor[iso]}"></span>${esc(D.countries[iso] || n.country)}</h4>
+          <div class="when">${esc(n["Latest submission"] || "No NDC data")}${n["Latest submission date"] ? ` · submitted ${esc(n["Latest submission date"])}` : ""}</div>
+          ${statement ? `<p class="statement" title="${esc(statement)}">${esc(statement)}</p>` : ""}
+          <dl>${keyRows}</dl>
+          <details><summary>All NDC fields</summary><dl>${allRows}</dl></details>
+        </div>`;
+    }).join("");
+    if (!cards) return "";
+    return `<section class="panel ndc-panel">
+        <div class="panel-head"><h3>Nationally Determined Contributions (NDCs)</h3>
+          <div class="sub">Latest UNFCCC NDC commitments for the selected countries · reference only, not forecast</div>
+          <div class="meta"><span class="badge" style="background:#f1f3f5;color:#495057">Climate Watch (WRI)</span></div></div>
+        <div class="ndc-grid">${cards}</div>
+      </section>`;
+  }
 
   function renderContent() {
     charts.forEach((c) => c.dispose());
@@ -755,16 +869,21 @@
       const need = !state.countries.size && !state.indicators.length ? "Select one or more countries and indicators"
         : !state.countries.size ? "Select at least one country" : "Select at least one indicator";
       content.innerHTML = `<div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>
-          <h2>${need}</h2>
+          <img src="logo.png" width="46" height="64" alt="">
+          <!-- <h2>${need}</h2> -->
+          <h2>Examples Scenarios</h2>
           <p>Pick countries and indicators from the left panel. Indicators that share a unit are combined on one chart; others get their own panel.</p>
-          <div class="examples">${EXAMPLES.map((e, k) => `<button class="example" data-example="${k}"><strong>${esc(e.title)}</strong><span>${esc(e.text)}</span></button>`).join("")}</div>
-        </div>`;
+          
+          ${EXAMPLE_GROUPS.map((g) => `<div class="example-group">
+            <h4 style="--c:${THEME_COLORS[g] || "#475569"}">${esc(g)}</h4>
+            <div class="examples">${EXAMPLES.map((e, k) => e.g !== g ? "" : `<button class="example" data-example="${k}" style="--c:${THEME_COLORS[g] || "#475569"}"><strong>${esc(e.title)}</strong><span>${esc(e.text)}</span></button>`).join("")}</div>
+          </div>`).join("")}
+        </div>` + ndcPanel();
       return;
     }
 
     const groups = panelGroups();
-    content.innerHTML = `<div class="panels">${groups.map((_, k) => `<section class="panel" id="panel-${k}"></section>`).join("")}</div>`;
+    content.innerHTML = `<div class="panels">${groups.map((_, k) => `<section class="panel" id="panel-${k}"></section>`).join("")}</div>` + ndcPanel();
     groups.forEach((group, k) => {
       const el = $(`#panel-${k}`);
       const defs = buildSeriesDefs(group);
@@ -781,7 +900,8 @@
   }
 
   function renderNotes() {
-    $("#notes").innerHTML = `Source: UN Data Commons (UN Statistics Division) via official APIs.
+    $("#notes").innerHTML = `Sources: UN Data Commons (UN Statistics Division); Pacific Data Hub .Stat (SPC) for GHG per capita and climate anomalies;
+      Our World in Data CO₂ &amp; GHG dataset; Climate Watch (WRI) for sectoral emissions and NDC content.
       Forecasts: zero-shot Google TimesFM 3.0 <b>${esc(D.model)}</b> to ${D.target_year || 2050}, shown as median (dashed) with a 10th–90th percentile interval.
       Series with fewer than 5 observed years or categorical status flags are shown as history only. Gaps between observed years are linearly interpolated (no marker).
       Long-horizon forecasts from short histories are indicative only. Data bundle generated ${esc(D.generated)}.
@@ -897,8 +1017,8 @@
 
   // ---------- Init ----------
   if (!readHash()) {
-    state.countries = new Set(REGIONS.Melanesia.filter((c) => D.countries[c]));
-    state.indicators = ["AG_LND_FRST"].filter((c) => D.indicators[c]);
+    state.countries = new Set();
+    state.indicators = [];
   }
   renderRegions();
   renderNotes();
