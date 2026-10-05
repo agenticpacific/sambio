@@ -150,6 +150,7 @@
   </main>
 
   <script type="module">
+    import { agencies } from "./agencies.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
     import { collection, getFirestore, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
@@ -162,19 +163,7 @@
       appId: "1:735484098453:web:0506813e30190bc530e89c"
     };
 
-    const agencyNames = new Map([
-      ["biosecurity", "Biosecurity Authority of Fiji"],
-      ["fiji-bureau-statistics", "Fiji Bureau of Statistics"],
-      ["lmma", "LMMA"],
-      ["manta-trust", "Manta Trust"],
-      ["fisheries", "Ministry of Fisheries"],
-      ["forestry", "Ministry of Forestry"],
-      ["lands-mineral-resources", "Ministry of Lands & Mineral Resources"],
-      ["strategic-planning", "Ministry of Strategic Planning, National Development & Statistics"],
-      ["naturefiji", "NatureFiji-MareqetiViti"],
-      ["usp", "University of the South Pacific (USP)"],
-      ["wcs-fiji", "Wildlife Conservation Society (WCS Fiji)"]
-    ]);
+    const agencyNames = new Map(agencies);
     const connection = document.querySelector("#connection");
     const resultCount = document.querySelector("#result-count");
     const search = document.querySelector("#search");

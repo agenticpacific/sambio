@@ -229,6 +229,7 @@
   </main>
 
   <script type="module">
+    import { agencies } from "./agencies.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
     import {
       collection,
@@ -251,19 +252,6 @@
       appId: "1:735484098453:web:0506813e30190bc530e89c"
     };
 
-    const agencies = [
-      ["biosecurity", "Biosecurity Authority of Fiji"],
-      ["fiji-bureau-statistics", "Fiji Bureau of Statistics"],
-      ["lmma", "LMMA"],
-      ["manta-trust", "Manta Trust"],
-      ["fisheries", "Ministry of Fisheries"],
-      ["forestry", "Ministry of Forestry"],
-      ["lands-mineral-resources", "Ministry of Lands & Mineral Resources"],
-      ["strategic-planning", "Ministry of Strategic Planning, National Development & Statistics"],
-      ["naturefiji", "NatureFiji-MareqetiViti"],
-      ["usp", "University of the South Pacific (USP)"],
-      ["wcs-fiji", "Wildlife Conservation Society (WCS Fiji)"]
-    ];
     const dates = [
       "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16",
       "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23"
