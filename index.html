@@ -121,6 +121,13 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600}
 .badge.yes{background:#e3f2f5;color:#08606f}
 .badge.no{background:#f1f3f5;color:#868e96}
+.cat{display:inline-block;min-width:26px;text-align:center;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:700;color:#fff}
+.cat.VU,.cat.NT,.cat.LC,.cat.DD{color:#1b1b1b}
+.iucn-cats{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:0 0 10px;border:1px solid var(--line)}
+.iucn-cats div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;min-width:0;overflow:hidden;white-space:nowrap}
+.iucn-cats div.off{opacity:.3}
+.mini{width:100%;border-collapse:collapse;font-size:12px;margin:4px 0 10px}
+.mini th,.mini td{padding:3px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 .maplibregl-popup-content{font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   padding:12px 14px;border-radius:9px;max-width:300px}
 .maplibregl-popup-content h4{margin:0 0 6px;font-size:13.5px}
@@ -269,19 +276,24 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
             <button class="tab active" data-tab="wdpa">Protected areas &mdash; WDPA Fiji</button>
             <button class="tab" data-tab="pipap">National register &mdash; SPREP Protected Areas Portal (PIPAP)</button>
             <button class="tab" data-tab="wetlands">Wetlands &mdash; Fiji wetland sites</button>
+            <button class="tab" data-tab="iucn">IUCN Red List &mdash; Fiji species</button>
           </span>
           <span class="sub" id="map-sub"></span>
           <span class="sub" id="pipap-sub" hidden></span>
           <span class="sub" id="wetlands-sub" hidden></span>
+          <span class="sub" id="iucn-sub" hidden></span>
         </h3>
         <div class="body" id="tab-wdpa">
           <div class="map-ctl">
             <label><input type="checkbox" id="pa-labels" checked> Protected area labels</label>
             <label><input type="checkbox" id="rec-points" checked> Filtered dataset locations</label>
+            <label id="seabird-ctl"><input type="checkbox" id="seabird-toggle" checked> Seabird colonies</label>
+            <label id="kba-ctl"><input type="checkbox" id="kba-toggle" checked> Key Biodiversity Areas</label>
             <button id="fit">Zoom to Fiji</button>
           </div>
           <div id="map"></div>
           <div class="legend" id="l-desig"></div>
+          <div class="legend" id="l-overlays"></div>
         </div>
         <div class="body" id="tab-pipap" hidden>
           <p class="muted" style="font-size:12.5px;margin:0 0 10px">
@@ -330,6 +342,38 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
             </div>
           </div>
         </div>
+        <div class="body" id="tab-iucn" hidden>
+          <p class="muted" style="font-size:12.5px;margin:0 0 10px">
+            Every species with a current <a href="https://www.iucnredlist.org/search?landRegions=FJ" target="_blank" rel="noopener">IUCN Red List</a>
+            assessment that lists Fiji in its range (global assessments, Red List API v4). Seabird species are cross-linked to the
+            <a href="https://pacific-seabirds.sprep.org/" target="_blank" rel="noopener">Pacific Seabird Database</a> colonies where they were surveyed.
+          </p>
+          <div id="iucn-cats" class="iucn-cats"></div>
+          <div class="map-ctl">
+            <input type="search" id="iucn-q" placeholder="Search species, family…" style="min-width:220px">
+            <select id="iucn-category"><option value="">All categories</option></select>
+            <select id="iucn-group"><option value="">All groups</option></select>
+            <label><input type="checkbox" id="iucn-threatened"> Threatened only (CR/EN/VU)</label>
+            <label><input type="checkbox" id="iucn-endemic"> Endemic to Fiji</label>
+            <label><input type="checkbox" id="iucn-seabird"> At seabird colonies</label>
+          </div>
+          <div class="twrap" id="iucn-twrap">
+            <table>
+              <thead><tr>
+                <th data-sort="scientific_name" style="width:24%">Species</th>
+                <th data-sort="group">Group</th>
+                <th data-sort="family">Family</th>
+                <th data-sort="category">Category</th>
+                <th data-sort="population_trend">Trend</th>
+                <th data-sort="endemic">Endemic</th>
+                <th data-sort="year_published" class="num">Assessed</th>
+                <th data-sort="colonies" class="num">Colonies</th>
+              </tr></thead>
+              <tbody id="iucn-tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:8px"><button id="iucn-more" hidden>Show more</button></div>
+        </div>
       </div>
 
       <div class="card span12">
@@ -367,6 +411,21 @@ const MASTERSHEET = "mastersheet.json";
 const PA_LAYER = "fj-pa-master.geojson";
 const PIPAP_REGISTER = "pipap-register.json";
 const WETLANDS_LAYER = "wetlands.geojson";
+const SEABIRD_LAYER = "fj-seabirds.geojson";
+const KBA_LAYER = "fj-kba.geojson";
+const IUCN_REGISTER = "iucn-register.json";
+
+// IUCN Red List category palette (official Red List colours).
+const IUCN_CATS = ["EX", "EW", "CR", "EN", "VU", "NT", "LC", "DD"];
+const IUCN_LABEL = {
+  EX: "Extinct", EW: "Extinct in the Wild", CR: "Critically Endangered",
+  EN: "Endangered", VU: "Vulnerable", NT: "Near Threatened",
+  LC: "Least Concern", DD: "Data Deficient"
+};
+const IUCN_COLOR = {
+  EX: "#000000", EW: "#542344", CR: "#d81e05", EN: "#fc7f3f",
+  VU: "#f9e814", NT: "#cce226", LC: "#60c659", DD: "#d1d1c6"
+};
 
 // Fiji in the continuous Pacific frame the protected area layer uses.
 const FIJI_BOUNDS = [[176.6, -21.2], [181.6, -12.2]];
@@ -399,7 +458,10 @@ const DESIG_FALLBACK = "#868e96";
 const RECORD_TYPES = {
   dataset: "Dataset",
   protected_area: "Protected area",
-  habitat_summary: "Reef habitat summary"
+  habitat_summary: "Reef habitat summary",
+  seabird_colony: "Seabird colony",
+  species_summary: "Red List species summary",
+  kba: "Key Biodiversity Area"
 };
 
 const FIELDS = {
@@ -452,9 +514,13 @@ Promise.allSettled([
   d3.json(MASTERSHEET),
   d3.json(PA_LAYER),
   d3.json(PIPAP_REGISTER),
-  d3.json(WETLANDS_LAYER)
+  d3.json(WETLANDS_LAYER),
+  d3.json(SEABIRD_LAYER),
+  d3.json(KBA_LAYER),
+  d3.json(IUCN_REGISTER)
 ]).then(results => {
-    const [masterResult, paResult, pipapResult, wetlandsResult] = results;
+    const [masterResult, paResult, pipapResult, wetlandsResult,
+           seabirdResult, kbaResult, iucnResult] = results;
     if (masterResult.status !== "fulfilled" || paResult.status !== "fulfilled" || wetlandsResult.status !== "fulfilled") {
       throw new Error("Missing required dashboard data files.");
     }
@@ -469,6 +535,12 @@ Promise.allSettled([
     state.pa = pa;
     state.pipap = pipap;
     state.wetlands = wetlands;
+    // Optional layers: the dashboard still works if a source was not harvested.
+    state.seabirds = seabirdResult.status === "fulfilled" ? seabirdResult.value : emptyFC();
+    state.kba = kbaResult.status === "fulfilled" ? kbaResult.value : emptyFC();
+    state.iucn = iucnResult.status === "fulfilled" ? iucnResult.value : { rows: [], count: 0 };
+    state.iucnSort = { key: "category", dir: "asc" };
+    state.iucnLimit = 300;
     state.pipapSort = { key: "reported_area_km2", dir: "desc" };
     document.getElementById("boot").hidden = true;
     document.getElementById("app").hidden = false;
@@ -491,6 +563,7 @@ function init() {
   initMap();
   initPipap();
   initWetlands();
+  initIucn();
   initTabs();
 
   document.getElementById("q").addEventListener("input", e => {
@@ -916,10 +989,11 @@ function locationLabel(r) {
 
 /* ------------------------------------------------------------------ drawer */
 
+const row = (k, v) => v == null || v === "" || (Array.isArray(v) && !v.length)
+  ? "" : `<dt>${esc(k)}</dt><dd>${v}</dd>`;
+
 function openDrawer(r) {
   const L = r.location, X = r.extra || {};
-  const row = (k, v) => v == null || v === "" || (Array.isArray(v) && !v.length)
-    ? "" : `<dt>${esc(k)}</dt><dd>${v}</dd>`;
   const tags = a => (a && a.length) ? `<div class="tags">${a.slice(0, 30).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : "";
   const res = (X.resources || []).filter(x => x && x.url).slice(0, 12);
 
@@ -996,6 +1070,10 @@ function openDrawer(r) {
           <span class="hb-bar"><i style="width:${(share * 100).toFixed(1)}%"></i></span>
           <span class="hb-val">${fmt(round2(v))} km² · ${(share * 100).toFixed(0)}%</span></div>`;
       }).join("")}</div>` : ""}
+    ${r.record_type === "seabird_colony" ? seabirdSection(X) : ""}
+    ${r.record_type === "species_summary" ? speciesSection(X) : ""}
+    ${r.record_type === "kba" ? kbaSection(X) : ""}
+    ${X.kbas && X.kbas.length ? `<dl>${row("Within KBA", linkList(X.kbas))}</dl>` : ""}
     ${X.records_in_fiji ? `<dl>${row("OBIS occurrences in Fiji", fmt(X.records_in_fiji))}</dl>` : ""}
     ${r.keywords && r.keywords.length ? `<h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">Keywords</h3>${tags(r.keywords)}` : ""}
     ${res.length ? `<h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383;margin-top:16px">Resources</h3>
@@ -1003,12 +1081,86 @@ function openDrawer(r) {
         `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(truncate(x.title || x.url, 60))}</a>
          ${x.format ? `<span class="muted"> · ${esc(x.format)}</span>` : ""}</li>`).join("")}</ul>` : ""}
   `;
+  document.querySelectorAll("#drawer-body a.xref").forEach(a => a.addEventListener("click", ev => {
+    ev.preventDefault();
+    const target = state.records.find(x => x.uid === a.dataset.uid);
+    if (target) openDrawer(target);
+  }));
+  const toIucn = document.getElementById("drawer-iucn");
+  if (toIucn) toIucn.addEventListener("click", ev => {
+    ev.preventDefault();
+    closeDrawer();
+    document.querySelector('#map-tabs .tab[data-tab="iucn"]').click();
+    document.getElementById("tab-iucn").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   document.getElementById("drawer").classList.add("open");
   document.getElementById("drawer").setAttribute("aria-hidden", "false");
   document.getElementById("scrim").classList.add("open");
 
   const c = r.location.centroid;
   if (c && state.mapReady) state.map.easeTo({ center: [c[0] < 0 ? c[0] + 360 : c[0], c[1]], zoom: 9 });
+}
+
+const H3 = t => `<h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#5d7383">${t}</h3>`;
+const catBadge = c => c ? `<span class="cat ${esc(c)}" style="background:${IUCN_COLOR[c] || "#868e96"}" title="${esc(IUCN_LABEL[c] || c)}">${esc(c)}</span>` : "—";
+const linkList = items => items.map(i =>
+  `<a href="#" class="xref" data-uid="${esc(i.uid)}">${esc(i.title)}</a>`).join("<br>");
+
+function catBars(counts) {
+  const total = d3.sum(Object.values(counts || {}));
+  if (!total) return "";
+  return `<div class="iucn-cats" style="cursor:default">${IUCN_CATS.filter(c => counts[c]).map(c =>
+    `<div style="flex:${counts[c]};background:${IUCN_COLOR[c]};color:${["VU","NT","LC","DD"].includes(c) ? "#1b1b1b" : "#fff"}"
+      title="${IUCN_LABEL[c]}: ${fmt(counts[c])}">${counts[c] / total > 0.05 ? `${c} ${fmt(counts[c])}` : ""}</div>`).join("")}</div>`;
+}
+
+function seabirdSection(X) {
+  const iucn = X.iucn || {};
+  return `${H3("Seabird colony")}
+    <dl>
+      ${row("Island", esc([X.island_name, X.local_island_name && `(${X.local_island_name})`].filter(Boolean).join(" ")))}
+      ${row("Island group", esc(X.atoll))}
+      ${row("Coordinates", esc(X.coordinates))}
+      ${row("Breeding", esc((X.breeding_species || []).join(", ")))}
+    </dl>
+    <table class="mini"><thead><tr><th>Species</th><th>Red List</th><th>Year</th><th>Abundance</th><th>Breeding</th></tr></thead>
+    <tbody>${(X.surveys || []).map(s => {
+      const cat = iucn[s.scientific_name];
+      return `<tr><td>${esc(s.common_name)}<br><i class="muted">${esc(s.scientific_name)}</i></td>
+        <td>${cat ? `<a href="${esc(cat.url)}" target="_blank" rel="noopener">${catBadge(cat.category)}</a>` : "—"}</td>
+        <td>${esc(s.years || "")}</td>
+        <td>${esc([s.count != null ? fmt(s.count) : "", s.abundance].filter(Boolean).join(" · "))}</td>
+        <td>${esc(s.breeding_status || "")}</td></tr>`;
+    }).join("")}</tbody></table>
+    ${X.data_sources && X.data_sources.length ? `<p class="muted" style="font-size:11.5px">Survey sources: ${esc(X.data_sources.join("; "))}</p>` : ""}`;
+}
+
+function speciesSection(X) {
+  return `${H3("Red List categories")}
+    ${catBars(X.category_counts)}
+    <dl>
+      ${row("Species assessed", fmt(X.species_count || 0))}
+      ${row("Threatened (CR/EN/VU)", fmt(X.threatened_count || 0))}
+      ${row("Endemic to Fiji", fmt(X.endemic_count || 0))}
+      ${row("Groups", esc(Object.entries(X.group_counts || {}).sort((a, b) => b[1] - a[1]).map(([g, n]) => `${g} (${fmt(n)})`).join(", ")))}
+    </dl>
+    <p style="font-size:12.5px"><a href="#" id="drawer-iucn">Open the species register tab &rarr;</a></p>`;
+}
+
+function kbaSection(X) {
+  return `${H3("Key Biodiversity Area")}
+    <dl>
+      ${row("National name", esc(X.national_name))}
+      ${row("KBA class", esc(X.kba_class))}
+      ${row("IBA status", esc(X.iba_status))}
+      ${row("AZE status", esc(X.aze_status))}
+      ${row("Area", X.area_km2 != null ? `${fmt(round2(X.area_km2))} km²` : "")}
+      ${row("Protected", X.protected_share != null ? pct(X.protected_share) : "0%")}
+      ${row("Overlapping PAs", (X.protected_area_overlaps || []).length ? linkList(X.protected_area_overlaps) : "")}
+      ${row("Seabird colonies", (X.seabird_colonies || []).length ? linkList(X.seabird_colonies) : "")}
+      ${row("Last update", esc(X.last_update))}
+    </dl>
+    <p class="muted" style="font-size:11.5px">${esc(X.citation)}</p>`;
 }
 
 function closeDrawer() {
@@ -1075,6 +1227,28 @@ function initMap() {
       },
       paint: { "text-color": "#0d2b33", "text-halo-color": "#ffffff", "text-halo-width": 1.6 }
     });
+    map.addSource("kba", { type: "geojson", data: state.kba });
+    map.addLayer({
+      id: "kba-fill", type: "fill", source: "kba",
+      paint: { "fill-color": "#7048e8", "fill-opacity": 0.08 }
+    });
+    map.addLayer({
+      id: "kba-line", type: "line", source: "kba",
+      paint: { "line-color": "#7048e8", "line-width": 1.6, "line-dasharray": [2, 1.5] }
+    });
+    map.addSource("seabirds", { type: "geojson", data: state.seabirds });
+    const catColor = ["match", ["coalesce", ["get", "top_category"], ""]];
+    IUCN_CATS.forEach(c => catColor.push(c, IUCN_COLOR[c]));
+    catColor.push("#868e96");
+    map.addLayer({
+      id: "seabird-pts", type: "circle", source: "seabirds",
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["get", "species"], 1, 4, 5, 6.5, 15, 10],
+        "circle-color": catColor,
+        "circle-stroke-color": "#1b1b1b", "circle-stroke-width": 1.1,
+        "circle-opacity": 0.9
+      }
+    });
     map.addLayer({
       id: "rec-pts", type: "circle", source: "recs",
       paint: {
@@ -1089,11 +1263,22 @@ function initMap() {
 
     document.getElementById("l-desig").innerHTML = desigs.map(d =>
       `<span><i style="background:${DESIG_COLOR[d] || DESIG_FALLBACK}"></i>${esc(d)}</span>`).join("");
+    const nSea = state.seabirds.features.length, nKba = state.kba.features.length;
     document.getElementById("map-sub").textContent =
-      `${state.pa.features.length} sites, styled by designation — zoom in for names`;
+      `${state.pa.features.length} sites, styled by designation — zoom in for names` +
+      (nSea ? ` · ${nSea} seabird colonies` : "") + (nKba ? ` · ${nKba} KBAs` : "");
+    const seaCats = IUCN_CATS.filter(c => state.seabirds.features.some(f => f.properties.top_category === c));
+    document.getElementById("l-overlays").innerHTML =
+      (nSea ? `<span style="font-weight:600;color:var(--ink)">Seabird colonies (most threatened species):</span>` +
+        seaCats.map(c => `<span><i style="background:${IUCN_COLOR[c]};border-radius:50%;border:1px solid #1b1b1b"></i>${IUCN_LABEL[c]}</span>`).join("") +
+        `<span><i style="background:#868e96;border-radius:50%;border:1px solid #1b1b1b"></i>Not assessed</span>` : "") +
+      (nKba ? `<span><i style="background:none;border:2px dashed #7048e8"></i>Key Biodiversity Area</span>` : "");
+    if (!nSea) disableOverlay("seabird", "No seabird colony layer (fj-seabirds.geojson) was found");
+    if (!nKba) disableOverlay("kba", "KBA boundaries not harvested: Earth Engine access to the WDKBA asset is pending");
 
     const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "320px" });
     map.on("click", "pa-fill", e => {
+      if (map.queryRenderedFeatures(e.point, { layers: ["rec-pts", "seabird-pts", "kba-fill"] }).length) return;
       const p = e.features[0].properties;
       popup.setLngLat(e.lngLat).setHTML(`
         <h4>${esc(p.NAME || "Protected area")}</h4>
@@ -1106,12 +1291,14 @@ function initMap() {
           <dt>Manager</dt><dd>${esc(p.MANG_AUTH || "—")}</dd>
         </dl>`).addTo(map);
     });
-    map.on("click", "rec-pts", e => {
+    // Overlays sit above protected areas; open their own record, not the PA popup.
+    ["rec-pts", "seabird-pts", "kba-fill"].forEach(id => map.on("click", id, e => {
+      if (id === "kba-fill" && map.queryRenderedFeatures(e.point, { layers: ["rec-pts", "seabird-pts"] }).length) return;
       const uid = e.features[0].properties.uid;
       const rec = state.records.find(r => r.uid === uid);
-      if (rec) openDrawer(rec);
-    });
-    ["pa-fill", "rec-pts"].forEach(id => {
+      if (rec) { popup.remove(); openDrawer(rec); }
+    }));
+    ["pa-fill", "rec-pts", "seabird-pts"].forEach(id => {
       map.on("mouseenter", id, () => map.getCanvas().style.cursor = "pointer");
       map.on("mouseleave", id, () => map.getCanvas().style.cursor = "");
     });
@@ -1124,8 +1311,21 @@ function initMap() {
     map.setLayoutProperty("pa-label", "visibility", e.target.checked ? "visible" : "none"));
   document.getElementById("rec-points").addEventListener("change", e =>
     map.setLayoutProperty("rec-pts", "visibility", e.target.checked ? "visible" : "none"));
+  document.getElementById("seabird-toggle").addEventListener("change", e =>
+    map.setLayoutProperty("seabird-pts", "visibility", e.target.checked ? "visible" : "none"));
+  document.getElementById("kba-toggle").addEventListener("change", e =>
+    ["kba-fill", "kba-line"].forEach(id =>
+      map.setLayoutProperty(id, "visibility", e.target.checked ? "visible" : "none")));
   document.getElementById("fit").addEventListener("click", () =>
     map.fitBounds(FIJI_BOUNDS, { padding: 24 }));
+}
+
+function disableOverlay(id, why) {
+  const box = document.getElementById(`${id}-toggle`);
+  box.checked = false;
+  box.disabled = true;
+  document.getElementById(`${id}-ctl`).title = why;
+  document.getElementById(`${id}-ctl`).style.opacity = 0.5;
 }
 
 function updateMapData() {
@@ -1159,6 +1359,8 @@ function initTabs() {
       document.getElementById("tab-wdpa").hidden = tab !== "wdpa";
       document.getElementById("tab-pipap").hidden = tab !== "pipap";
       document.getElementById("tab-wetlands").hidden = tab !== "wetlands";
+      document.getElementById("tab-iucn").hidden = tab !== "iucn";
+      document.getElementById("iucn-sub").hidden = tab !== "iucn";
       document.getElementById("map-sub").hidden = tab !== "wdpa";
       document.getElementById("pipap-sub").hidden = tab !== "pipap";
       document.getElementById("wetlands-sub").hidden = tab !== "wetlands";
@@ -1458,6 +1660,122 @@ function pipapFocus(d) {
   state.pipapMap.easeTo({ center: [lon, d.centroid[1]], zoom: 10 });
   const rec = d.wdpa_uid ? state.records.find(r => r.uid === d.wdpa_uid) : null;
   if (rec) openDrawer(rec);
+}
+
+/* --------------------------------------------------------------------- iucn */
+
+function initIucn() {
+  const rows = state.iucn.rows || [];
+  rows.forEach(r => { r.colonies = (r.seabird_colonies || []).length; });
+  const cats = IUCN_CATS.filter(c => rows.some(r => r.category === c));
+  const groups = [...new Set(rows.map(r => r.group).filter(Boolean))].sort();
+  d3.select("#iucn-category").selectAll("option.opt").data(cats).join("option")
+    .attr("class", "opt").attr("value", d => d).text(d => `${d} — ${IUCN_LABEL[d]}`);
+  d3.select("#iucn-group").selectAll("option.opt").data(groups).join("option")
+    .attr("class", "opt").attr("value", d => d).text(d => d);
+
+  const counts = d3.rollup(rows, v => v.length, r => r.category);
+  d3.select("#iucn-cats").selectAll("div").data(cats).join("div")
+    .style("flex", c => counts.get(c))
+    .style("background", c => IUCN_COLOR[c])
+    .style("color", c => ["VU", "NT", "LC", "DD"].includes(c) ? "#1b1b1b" : "#fff")
+    .attr("title", c => `${IUCN_LABEL[c]}: ${fmt(counts.get(c))} — click to filter`)
+    .text(c => counts.get(c) / rows.length > 0.04 ? `${c} ${fmt(counts.get(c))}` : "")
+    .on("click", (_, c) => {
+      const sel = document.getElementById("iucn-category");
+      sel.value = sel.value === c ? "" : c;
+      renderIucn(true);
+    });
+
+  const rerender = () => renderIucn(true);
+  document.getElementById("iucn-q").addEventListener("input", debounce(rerender, 150));
+  ["iucn-category", "iucn-group", "iucn-threatened", "iucn-endemic", "iucn-seabird"].forEach(id =>
+    document.getElementById(id).addEventListener("change", rerender));
+  document.getElementById("iucn-more").addEventListener("click", () => {
+    state.iucnLimit += 300;
+    renderIucn();
+  });
+  document.querySelectorAll("#iucn-twrap th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      state.iucnSort = state.iucnSort.key === key
+        ? { key, dir: state.iucnSort.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "colonies" || key === "year_published" ? "desc" : "asc" };
+      renderIucn(true);
+    });
+  });
+  renderIucn(true);
+}
+
+function iucnFiltered() {
+  const q = (document.getElementById("iucn-q").value || "").trim().toLowerCase();
+  const cat = document.getElementById("iucn-category").value;
+  const group = document.getElementById("iucn-group").value;
+  const threatened = document.getElementById("iucn-threatened").checked;
+  const endemic = document.getElementById("iucn-endemic").checked;
+  const seabird = document.getElementById("iucn-seabird").checked;
+  return (state.iucn.rows || []).filter(r => {
+    if (cat && r.category !== cat) return false;
+    if (group && r.group !== group) return false;
+    if (threatened && !["CR", "EN", "VU"].includes(r.category)) return false;
+    if (endemic && !r.endemic) return false;
+    if (seabird && !r.colonies) return false;
+    if (q) {
+      const hay = `${r.scientific_name || ""} ${r.common_name || ""} ${r.family || ""} ${r.order || ""} ${r.class || ""}`.toLowerCase();
+      if (!q.split(/\s+/).every(w => hay.includes(w))) return false;
+    }
+    return true;
+  });
+}
+
+function renderIucn(reset) {
+  if (reset) state.iucnLimit = 300;
+  const { key, dir } = state.iucnSort;
+  const mult = dir === "asc" ? 1 : -1;
+  const rank = c => { const i = IUCN_CATS.indexOf(c); return i < 0 ? 99 : i; };
+  const rows = iucnFiltered().sort((a, b) => {
+    let x = a[key], y = b[key];
+    if (key === "category") { x = rank(x); y = rank(y); }
+    if (key === "endemic") { x = a.endemic ? 1 : 0; y = b.endemic ? 1 : 0; }
+    if (x == null && y == null) return 0;
+    if (x == null || x === "") return 1;
+    if (y == null || y === "") return -1;
+    const d = typeof x === "string" ? x.localeCompare(y) : x - y;
+    return d * mult || (a.scientific_name || "").localeCompare(b.scientific_name || "");
+  });
+  const cat = document.getElementById("iucn-category").value;
+  d3.selectAll("#iucn-cats div").classed("off", c => cat && c !== cat);
+
+  document.querySelectorAll("#iucn-twrap th[data-sort]").forEach(th => {
+    th.classList.toggle("sorted", th.dataset.sort === key);
+    th.classList.toggle("asc", th.dataset.sort === key && dir === "asc");
+  });
+
+  const shown = rows.slice(0, state.iucnLimit);
+  d3.select("#iucn-tbody").selectAll("tr").data(shown, d => d.sis_taxon_id).join("tr")
+    .html(d => `
+      <td><a href="${esc(d.url)}" target="_blank" rel="noopener"><i>${esc(d.scientific_name)}</i></a>
+        ${d.common_name ? `<br><span class="muted" style="font-size:11.5px">${esc(d.common_name)}</span>` : ""}</td>
+      <td>${esc(d.group || "")}</td>
+      <td>${esc(d.family || "")}</td>
+      <td>${catBadge(d.category)} ${d.criteria ? `<span class="muted" style="font-size:11px">${esc(d.criteria)}</span>` : ""}</td>
+      <td>${esc(d.population_trend || "—")}</td>
+      <td>${d.endemic ? '<span class="badge yes">endemic</span>' : ""}</td>
+      <td class="num">${d.year_published || "—"}</td>
+      <td class="num">${d.colonies ? `<a href="#" class="iucn-col" data-uid="${esc(d.seabird_colonies[0].uid)}" title="${esc(d.seabird_colonies.map(c => c.title).join(", "))}">${d.colonies}</a>` : ""}</td>`);
+  d3.selectAll("#iucn-tbody a.iucn-col").on("click", ev => {
+    ev.preventDefault();
+    const first = state.records.find(r => r.uid === ev.currentTarget.dataset.uid);
+    if (first) openDrawer(first);
+  });
+
+  const more = document.getElementById("iucn-more");
+  more.hidden = rows.length <= shown.length;
+  more.textContent = `Show more (${fmt(rows.length - shown.length)} remaining)`;
+  const total = state.iucn.count || 0;
+  document.getElementById("iucn-sub").textContent = total
+    ? `${fmt(rows.length)} of ${fmt(total)} species · ${fmt(state.iucn.threatened || 0)} threatened · ${fmt(state.iucn.endemic || 0)} endemic`
+    : "Register not available — run uv run data fetch --only iucn";
 }
 
 /* ------------------------------------------------------------------- utils */
