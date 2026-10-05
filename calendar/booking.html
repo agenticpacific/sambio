@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f2">
+  <title>SAMBIO | Consultation bookings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #173b3a;
+      --muted: #657873;
+      --green: #167a62;
+      --green-dark: #105c4a;
+      --mint: #e7f2ec;
+      --paper: #f5f7f2;
+      --line: #dce5dc;
+      --white: #fff;
+      --warning-bg: #fff3db;
+      --warning-ink: #77510a;
+      font-family: Roboto, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--paper); }
+    button, input { font: inherit; }
+    .page { width: min(1240px, calc(100% - 48px)); margin: 0 auto; }
+    .masthead { min-height: 94px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 18px; }
+    .brand img { display: block; width: auto; object-fit: contain; }
+    .brand .sambio { height: 76px; max-width: 110px; }
+    .brand .mecc { height: 56px; max-width: 240px; }
+    .brand-rule { width: 1px; height: 46px; background: var(--line); }
+    .back-link { color: var(--green-dark); font-size: 13px; font-weight: 600; text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+
+    main { padding: 34px 0 44px; }
+    .eyebrow { margin: 0 0 9px; color: var(--green); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { margin: 0; font-size: 34px; line-height: 1.15; font-weight: 600; }
+    .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+    .public-notice { display: flex; gap: 11px; align-items: flex-start; margin: 24px 0 18px; padding: 13px 15px; border: 1px solid #ead9b8; border-radius: 4px; background: var(--warning-bg); color: var(--warning-ink); font-size: 13px; line-height: 1.5; }
+    .public-notice strong { display: block; margin-bottom: 2px; }
+    .connection { display: flex; align-items: center; gap: 9px; min-height: 42px; margin-bottom: 14px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--muted); font-size: 13px; }
+    .connection::before { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #9aaba3; content: ""; }
+    .connection[data-state="ready"]::before { background: var(--green); }
+    .connection[data-state="error"] { border-color: #e4c3be; color: #a63c32; }
+    .connection[data-state="error"]::before { background: #a63c32; }
+
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 11px; }
+    .result-count { color: var(--muted); font-size: 13px; }
+    .search { width: min(360px, 100%); min-height: 42px; padding: 9px 12px; border: 1px solid #cbd8ce; border-radius: 3px; background: #fff; color: var(--ink); }
+    .search:focus { outline: 2px solid #59a88b; outline-offset: 2px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--white); }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px 13px; border-bottom: 1px solid var(--line); background: #f0f5ef; color: #49645b; font-size: 11px; font-weight: 700; letter-spacing: .55px; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 13px; border-bottom: 1px solid #e8eee8; color: #294a43; font-size: 13px; line-height: 1.45; vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    td.agency { min-width: 175px; font-weight: 600; }
+    td.date, td.time, td.mode, td.submitted { white-space: nowrap; }
+    td.email { min-width: 180px; }
+    td.notes { min-width: 180px; max-width: 260px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .mode-label { display: inline-block; padding: 4px 7px; border-radius: 3px; background: var(--mint); color: var(--green-dark); font-size: 12px; font-weight: 600; }
+    .empty { padding: 34px 18px; color: var(--muted); text-align: center; }
+    .footer { padding: 17px 0 24px; color: #76877f; font-size: 12px; }
+
+    @media (max-width: 760px) {
+      .page { width: min(100% - 32px, 570px); }
+      .masthead { min-height: 90px; }
+      .brand { gap: 12px; }
+      .brand .sambio { height: 62px; max-width: 90px; }
+      .brand .mecc { height: 43px; max-width: 180px; }
+      main { padding-top: 27px; }
+      h1 { font-size: 30px; }
+      .toolbar { align-items: stretch; flex-direction: column; gap: 9px; }
+      .search { width: 100%; }
+      .table-wrap { overflow: visible; border: 0; background: transparent; }
+      table, tbody { display: block; width: 100%; }
+      thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+      tbody { display: grid; gap: 10px; }
+      tr { display: grid; padding: 7px 13px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); }
+      td, td.agency, td.date, td.time, td.mode, td.email, td.notes, td.submitted { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; min-width: 0; max-width: none; padding: 9px 0; border-bottom: 1px solid #e8eee8; white-space: normal; }
+      td:last-child { border-bottom: 0; }
+      td::before { color: var(--muted); content: attr(data-label); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+      .empty { border: 1px solid var(--line); border-radius: 4px; background: var(--white); }
+    }
+    @media (max-width: 390px) {
+      .page { width: calc(100% - 24px); }
+      .masthead { gap: 8px; }
+      .brand { gap: 10px; }
+      .brand .sambio { height: 54px; max-width: 74px; }
+      .brand .mecc { height: 38px; max-width: 150px; }
+      .brand-rule { height: 36px; }
+      .back-link { max-width: 76px; text-align: right; line-height: 1.35; }
+      td, td.agency, td.date, td.time, td.mode, td.email, td.notes, td.submitted { grid-template-columns: 78px minmax(0, 1fr); gap: 7px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page masthead">
+    <div class="brand" aria-label="SAMBIO and Ministry of Environment and Climate Change">
+      <img class="sambio" src="sambio.png" alt="SAMBIO Fiji">
+      <span class="brand-rule" aria-hidden="true"></span>
+      <img class="mecc" src="mecc.png" alt="Ministry of Environment and Climate Change">
+    </div>
+    <a class="back-link" href="index.html">Back to booking</a>
+  </header>
+
+  <main class="page">
+    <p class="eyebrow">SAMBIO project · October 2026</p>
+    <h1>Consultation bookings</h1>
+    <p class="subtitle">Partner & Stakeholder Meetings · 12–23 October 2026 · Fiji Standard Time</p>
+
+    <aside class="public-notice" aria-label="Public access notice">
+      <div><strong>Public Booking Details</strong></div>
+    </aside>
+
+    <div id="connection" class="connection" role="status" aria-live="polite" data-state="loading">Connecting to the booking records...</div>
+
+    <section aria-label="Bookings">
+      <div class="toolbar">
+        <span id="result-count" class="result-count" aria-live="polite">Loading bookings...</span>
+        <input id="search" class="search" type="search" placeholder="Search bookings" aria-label="Search bookings">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Agency</th>
+              <th scope="col">Date</th>
+              <th scope="col">Time</th>
+              <th scope="col">Format</th>
+              <th scope="col">Contact</th>
+              <th scope="col">Email</th>
+              <th scope="col">Notes</th>
+              <th scope="col">Booked at</th>
+            </tr>
+          </thead>
+          <tbody id="booking-rows"></tbody>
+        </table>
+        <div id="empty-state" class="empty" hidden>No bookings found.</div>
+      </div>
+    </section>
+    <footer class="footer">Booking records update automatically as reservations are made.</footer>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import { collection, getFirestore, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1uVBe0NKfyODX6BIs8e0jzMCIOFJmwFo",
+      authDomain: "agenticpacific.firebaseapp.com",
+      projectId: "agenticpacific",
+      storageBucket: "agenticpacific.firebasestorage.app",
+      messagingSenderId: "735484098453",
+      appId: "1:735484098453:web:0506813e30190bc530e89c"
+    };
+
+    const agencyNames = new Map([
+      ["biosecurity", "Biosecurity Authority of Fiji"],
+      ["fiji-bureau-statistics", "Fiji Bureau of Statistics"],
+      ["lmma", "LMMA"],
+      ["manta-trust", "Manta Trust"],
+      ["fisheries", "Ministry of Fisheries"],
+      ["forestry", "Ministry of Forestry"],
+      ["lands-mineral-resources", "Ministry of Lands & Mineral Resources"],
+      ["strategic-planning", "Ministry of Strategic Planning, National Development & Statistics"],
+      ["naturefiji", "NatureFiji-MareqetiViti"],
+      ["usp", "University of the South Pacific (USP)"],
+      ["wcs-fiji", "Wildlife Conservation Society (WCS Fiji)"]
+    ]);
+    const connection = document.querySelector("#connection");
+    const resultCount = document.querySelector("#result-count");
+    const search = document.querySelector("#search");
+    const rows = document.querySelector("#booking-rows");
+    const emptyState = document.querySelector("#empty-state");
+    let slots = [];
+    let contacts = new Map();
+    let slotsLoaded = false;
+    let contactsLoaded = false;
+
+    function setConnection(message, state) {
+      connection.textContent = message;
+      connection.dataset.state = state;
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const date = new Date(`${value}T12:00:00+12:00`);
+      return new Intl.DateTimeFormat("en-FJ", {
+        weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "Pacific/Fiji"
+      }).format(date);
+    }
+
+    function formatTime(value) {
+      if (!value) return "-";
+      const [hour, minute] = value.split(":").map(Number);
+      return `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
+    }
+
+    function formatTimestamp(value) {
+      if (!value || typeof value.toDate !== "function") return "-";
+      return new Intl.DateTimeFormat("en-FJ", {
+        day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Pacific/Fiji"
+      }).format(value.toDate());
+    }
+
+    function addCell(row, label, value, className = "") {
+      const cell = document.createElement("td");
+      cell.dataset.label = label;
+      if (className) cell.className = className;
+      if (value instanceof Node) cell.append(value);
+      else cell.textContent = value || "-";
+      row.append(cell);
+    }
+
+    function render() {
+      if (!slotsLoaded || !contactsLoaded) return;
+      const bookings = slots.map(slot => ({
+        ...slot,
+        agency: agencyNames.get(slot.agencyId) || slot.agencyId || "Unknown agency",
+        contact: contacts.get(slot.agencyId) || {}
+      })).sort((first, second) => `${first.date}_${first.time}`.localeCompare(`${second.date}_${second.time}`));
+      const term = search.value.trim().toLocaleLowerCase();
+      const visible = bookings.filter(booking => [
+        booking.agency, booking.date, booking.time, booking.mode,
+        booking.contact.name, booking.contact.email, booking.contact.notes
+      ].some(value => String(value || "").toLocaleLowerCase().includes(term)));
+
+      rows.replaceChildren();
+      resultCount.textContent = `${visible.length} of ${bookings.length} bookings`;
+      emptyState.hidden = visible.length > 0;
+      for (const booking of visible) {
+        const row = document.createElement("tr");
+        addCell(row, "Agency", booking.agency, "agency");
+        addCell(row, "Date", formatDate(booking.date), "date");
+        addCell(row, "Time", formatTime(booking.time), "time");
+        const mode = document.createElement("span");
+        mode.className = "mode-label";
+        mode.textContent = booking.mode === "face-to-face" ? "Face-to-face" : booking.mode === "online" ? "Online" : "-";
+        addCell(row, "Format", mode, "mode");
+        addCell(row, "Contact", booking.contact.name, "contact");
+        addCell(row, "Email", booking.contact.email, "email");
+        addCell(row, "Notes", booking.contact.notes, "notes");
+        addCell(row, "Booked at", formatTimestamp(booking.contact.createdAt || booking.createdAt), "submitted");
+        rows.append(row);
+      }
+    }
+
+    function handleLoadError(error) {
+      console.error("Booking register failed to load:", error);
+      setConnection("Bookings could not be loaded. Check the Firestore rules and try refreshing.", "error");
+      resultCount.textContent = "Unable to load bookings";
+    }
+
+    search.addEventListener("input", render);
+
+    try {
+      const app = initializeApp(firebaseConfig, "sambio-booking-register");
+      const db = getFirestore(app, "sambio-calendar");
+      onSnapshot(collection(db, "meetingSlots"), snapshot => {
+        slots = snapshot.docs.map(document => document.data());
+        slotsLoaded = true;
+        if (contactsLoaded) setConnection("Connected. Booking updates appear automatically.", "ready");
+        render();
+      }, handleLoadError);
+      onSnapshot(collection(db, "bookingContacts"), snapshot => {
+        contacts = new Map(snapshot.docs.map(document => [document.id, document.data()]));
+        contactsLoaded = true;
+        if (slotsLoaded) setConnection("Connected. Booking updates appear automatically.", "ready");
+        render();
+      }, handleLoadError);
+    } catch (error) {
+      handleLoadError(error);
+    }
+  </script>
+</body>
+</html>

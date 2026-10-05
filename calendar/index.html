@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f2">
+  <title>SAMBIO | Partner consultations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #173b3a;
+      --muted: #657873;
+      --green: #167a62;
+      --green-dark: #105c4a;
+      --mint: #e7f2ec;
+      --lime: #d3e969;
+      --paper: #f5f7f2;
+      --line: #dce5dc;
+      --white: #fff;
+      --danger: #a63c32;
+      font-family: Roboto, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--paper); }
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; }
+
+    .page { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+    .masthead {
+      min-height: 108px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 18px; }
+    .brand img { display: block; width: auto; object-fit: contain; }
+    .brand .sambio { height: 76px; max-width: 110px; }
+    .brand .mecc { height: 56px; max-width: 240px; }
+    .brand-rule { width: 1px; height: 46px; background: var(--line); }
+    .masthead-note { color: var(--muted); font-size: 13px; font-weight: 500; }
+
+    .intro { padding: 38px 0 29px; }
+    .eyebrow { margin: 0 0 10px; color: var(--green); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { max-width: 780px; margin: 0; font-size: clamp(30px, 4vw, 42px); line-height: 1.12; font-weight: 600; letter-spacing: 0; }
+    .intro-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-top: 13px; }
+    .intro-copy { max-width: 670px; margin: 0; color: #526963; font-size: 15px; line-height: 1.6; }
+    .date-range { flex: none; padding: 11px 14px; border-left: 3px solid var(--lime); background: var(--mint); color: var(--green-dark); font-size: 13px; font-weight: 600; }
+
+    .connection { display: flex; align-items: center; gap: 9px; min-height: 42px; margin: 0 0 16px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--muted); font-size: 13px; }
+    .connection::before { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #9aaba3; content: ""; }
+    .connection[data-state="ready"]::before { background: var(--green); }
+    .connection[data-state="error"] { border-color: #e4c3be; color: var(--danger); }
+    .connection[data-state="error"]::before { background: var(--danger); }
+
+    .booking-layout { display: grid; grid-template-columns: minmax(285px, .83fr) minmax(0, 1.5fr); gap: 16px; align-items: start; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: 5px; background: var(--white); }
+    .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 21px 22px 17px; border-bottom: 1px solid #e8eee8; }
+    .panel-heading h2 { margin: 0; font-size: 18px; font-weight: 600; }
+    .panel-heading p { margin: 5px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .step { display: grid; width: 27px; height: 27px; flex: none; place-items: center; border-radius: 50%; background: var(--mint); color: var(--green-dark); font-size: 13px; font-weight: 700; }
+    .form-body { padding: 19px 22px 22px; }
+    .field { display: grid; gap: 7px; margin-bottom: 16px; }
+    .field label, .field-label { color: #294a43; font-size: 13px; font-weight: 600; }
+    .field input, .field select, .field textarea { width: 100%; min-height: 43px; padding: 10px 11px; border: 1px solid #cbd8ce; border-radius: 3px; outline: none; background: #fff; color: var(--ink); }
+    .field textarea { min-height: 78px; resize: vertical; }
+    .field input:focus, .field select:focus, .field textarea:focus, button:focus-visible { outline: 2px solid #59a88b; outline-offset: 2px; }
+    .field small { color: var(--muted); font-size: 12px; }
+    .mode-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mode-option { position: relative; }
+    .mode-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .mode-option span { display: flex; min-height: 42px; align-items: center; justify-content: center; border: 1px solid #cbd8ce; border-radius: 3px; color: #45625a; cursor: pointer; font-size: 13px; font-weight: 500; }
+    .mode-option input:checked + span { border-color: var(--green); background: var(--mint); color: var(--green-dark); }
+    .mode-option input:focus-visible + span { outline: 2px solid #59a88b; outline-offset: 2px; }
+    .submit-button { display: flex; width: 100%; min-height: 46px; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 3px; background: var(--green); color: #fff; cursor: pointer; font-weight: 600; transition: background .18s ease, transform .18s ease; }
+    .submit-button:hover:not(:disabled) { transform: translateY(-1px); background: var(--green-dark); }
+    .submit-button:disabled { cursor: not-allowed; opacity: .48; }
+    .form-message { min-height: 19px; margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .form-message[data-kind="error"] { color: var(--danger); }
+    .form-message[data-kind="success"] { color: var(--green-dark); }
+
+    .calendar-body { padding: 18px 22px 22px; }
+    .week-label { margin: 0 0 9px; color: #789087; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+    .week-label:not(:first-child) { margin-top: 19px; }
+    .date-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
+    .date-button { min-height: 64px; padding: 8px 4px; border: 1px solid var(--line); border-radius: 3px; background: #fff; cursor: pointer; text-align: center; transition: border-color .15s ease, background .15s ease; }
+    .date-button:hover { border-color: #8ab6a1; }
+    .date-button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: #fff; }
+    .date-button .day-name { display: block; margin-bottom: 4px; color: inherit; font-size: 11px; opacity: .76; }
+    .date-button .day-number { font-size: 17px; font-weight: 600; }
+    .selected-date { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 24px 0 11px; }
+    .selected-date h3 { margin: 0; font-size: 16px; font-weight: 600; }
+    .selected-date span { color: var(--muted); font-size: 12px; }
+    .time-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .time-button { min-height: 40px; border: 1px solid #cbd8ce; border-radius: 3px; background: #fff; color: var(--green-dark); cursor: pointer; font-size: 13px; font-weight: 500; transition: background .15s ease, border-color .15s ease; }
+    .time-button:hover:not(:disabled) { border-color: var(--green); background: #f0f7f2; }
+    .time-button[aria-pressed="true"] { border-color: var(--green); background: var(--mint); box-shadow: inset 0 0 0 1px var(--green); }
+    .time-button:disabled { border-color: #efc4c0; background: #fce9e7; color: #9e4a43; cursor: not-allowed; text-decoration: line-through; }
+    .calendar-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; padding-top: 13px; border-top: 1px solid #e8eee8; color: var(--muted); font-size: 12px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 13px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 10px; height: 10px; border: 1px solid #cbd8ce; border-radius: 2px; background: white; }
+    .legend .taken { border-color: #edf0ed; background: #f5f6f4; }
+    .empty-slots { grid-column: 1 / -1; margin: 0; padding: 18px 0; color: var(--muted); font-size: 13px; }
+    .footer { display: flex; justify-content: space-between; gap: 16px; padding: 18px 0 28px; color: #76877f; font-size: 12px; line-height: 1.5; }
+    .footer p { margin: 0; }
+    .footer .timezone { flex: none; }
+
+    @media (max-width: 760px) {
+      .page { width: min(100% - 32px, 570px); }
+      .masthead { min-height: 90px; }
+      .brand { gap: 12px; }
+      .brand .sambio { height: 62px; max-width: 90px; }
+      .brand .mecc { height: 43px; max-width: 180px; }
+      .masthead-note { max-width: 92px; text-align: right; line-height: 1.35; }
+      .intro { padding: 29px 0 22px; }
+      .intro-row { align-items: flex-start; flex-direction: column; gap: 13px; }
+      .date-range { padding: 9px 11px; }
+      .booking-layout { grid-template-columns: 1fr; }
+      .panel-heading { padding: 18px 18px 15px; }
+      .form-body, .calendar-body { padding: 17px 18px 19px; }
+      .footer { flex-direction: column; gap: 5px; }
+    }
+    @media (max-width: 390px) {
+      .page { width: calc(100% - 24px); }
+      .brand { gap: 10px; }
+      .brand .sambio { height: 54px; max-width: 74px; }
+      .brand .mecc { height: 38px; max-width: 150px; }
+      .brand-rule { height: 36px; }
+      .masthead-note { font-size: 11px; }
+      .time-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .calendar-body { padding-right: 13px; padding-left: 13px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page masthead">
+    <div class="brand" aria-label="SAMBIO and Ministry of Environment and Climate Change">
+      <img class="sambio" src="sambio.png" alt="SAMBIO Fiji">
+      <span class="brand-rule" aria-hidden="true"></span>
+      <img class="mecc" src="mecc.png" alt="Ministry of Environment and Climate Change">
+    </div>
+    <div class="masthead-note">Stakeholder & Partner Consultations<br>October 2026</div>
+  </header>
+
+  <main class="page">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">SAMBIO project · Stakeholder and Partner Consultation Meetings</p>
+      <h1 id="page-title">Contribute towards building Fiji's Environmental Data Systems</h1>
+      <div class="intro-row">
+        <p class="intro-copy">Book a 30-minute consultation to discuss data requirements and collaboration for the SAMBIO Projects's <b>National Protected Area Data Management System, the Online Biodiversity Tracking System</b>, and the national <b>Environmental Data Warehouse (EDW)</b>.</p>
+        <div class="date-range">12–23 October 2026</div>
+      </div>
+    </section>
+
+    <div id="connection" class="connection" role="status" aria-live="polite" data-state="loading">Connecting to the shared booking calendar...</div>
+
+    <form id="booking-form" class="booking-layout">
+      <section class="panel" aria-labelledby="details-title">
+        <div class="panel-heading">
+          <div><h2 id="details-title">Your details</h2><p>One consultation booking per agency.</p></div>
+          <span class="step" aria-hidden="true">1</span>
+        </div>
+        <div class="form-body">
+          <div class="field">
+            <label for="agency">Agency</label>
+            <select id="agency" name="agency" required>
+              <option value="" selected disabled>Select your agency</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="contact-name">Contact name</label>
+            <input id="contact-name" name="contactName" type="text" autocomplete="name" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+          </div>
+          <fieldset class="field" style="padding:0;border:0;">
+            <legend class="field-label" style="margin-bottom:8px;">Meeting format</legend>
+            <div class="mode-options">
+              <label class="mode-option"><input type="radio" name="mode" value="face-to-face" checked><span>Face-to-face</span></label>
+              <label class="mode-option"><input type="radio" name="mode" value="online"><span>Online</span></label>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="notes">Notes <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
+            <textarea id="notes" name="notes" maxlength="1000" placeholder="Anything we should know before the meeting?"></textarea>
+          </div>
+          <button id="submit-button" class="submit-button" type="submit" disabled>Confirm consultation</button>
+          <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="calendar-title">
+        <div class="panel-heading">
+          <div><h2 id="calendar-title">Choose a time</h2><p>Select a weekday, then an available 30-minute slot.</p></div>
+          <span class="step" aria-hidden="true">2</span>
+        </div>
+        <div class="calendar-body">
+          <p class="week-label">Week one</p>
+          <div id="week-one" class="date-grid" aria-label="Week one dates"></div>
+          <p class="week-label">Week two</p>
+          <div id="week-two" class="date-grid" aria-label="Week two dates"></div>
+          <div class="selected-date"><h3 id="selected-date-label"></h3><span id="day-availability"></span></div>
+          <div id="time-grid" class="time-grid" aria-label="Available meeting times"></div>
+          <div class="calendar-foot">
+            <div class="legend" aria-label="Calendar legend"><span><i></i>Available</span><span><i class="taken"></i>Booked</span></div>
+            <span>30 minutes</span>
+          </div>
+        </div>
+      </section>
+    </form>
+
+    <footer class="footer">
+      <p>Consultations are held with SAMBIO Project Officers and Data Management System Consultant.</p>
+      <p class="timezone">All times shown in Fiji Standard Time (FJT | UTC+12).</p>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import {
+      collection,
+      doc,
+      getDoc,
+      onSnapshot,
+      query,
+      runTransaction,
+      Timestamp,
+      where
+    } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1uVBe0NKfyODX6BIs8e0jzMCIOFJmwFo",
+      authDomain: "agenticpacific.firebaseapp.com",
+      projectId: "agenticpacific",
+      storageBucket: "agenticpacific.firebasestorage.app",
+      messagingSenderId: "735484098453",
+      appId: "1:735484098453:web:0506813e30190bc530e89c"
+    };
+
+    const agencies = [
+      ["biosecurity", "Biosecurity Authority of Fiji"],
+      ["fiji-bureau-statistics", "Fiji Bureau of Statistics"],
+      ["lmma", "LMMA"],
+      ["manta-trust", "Manta Trust"],
+      ["fisheries", "Ministry of Fisheries"],
+      ["forestry", "Ministry of Forestry"],
+      ["lands-mineral-resources", "Ministry of Lands & Mineral Resources"],
+      ["strategic-planning", "Ministry of Strategic Planning, National Development & Statistics"],
+      ["naturefiji", "NatureFiji-MareqetiViti"],
+      ["usp", "University of the South Pacific (USP)"],
+      ["wcs-fiji", "Wildlife Conservation Society (WCS Fiji)"]
+    ];
+    const dates = [
+      "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16",
+      "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23"
+    ];
+    const times = Array.from({ length: 14 }, (_, index) => {
+      const minutes = 9 * 60 + index * 30;
+      return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+    });
+    const agencyNames = new Map(agencies);
+    const form = document.querySelector("#booking-form");
+    const agencySelect = document.querySelector("#agency");
+    const submitButton = document.querySelector("#submit-button");
+    const formMessage = document.querySelector("#form-message");
+    const connection = document.querySelector("#connection");
+    const timeGrid = document.querySelector("#time-grid");
+    const selectedDateLabel = document.querySelector("#selected-date-label");
+    const dayAvailability = document.querySelector("#day-availability");
+    let db;
+    let selectedDate = dates[0];
+    let selectedTime = "";
+    let bookedSlots = new Map();
+    let agencyAlreadyBooked = false;
+    let checkingAgency = false;
+    let submitting = false;
+    let connectionTimer;
+
+    function setMessage(message = "", kind = "") {
+      formMessage.textContent = message;
+      formMessage.dataset.kind = kind;
+    }
+
+    function setConnection(message, state) {
+      connection.textContent = message;
+      connection.dataset.state = state;
+    }
+
+    function slotId(date, time) {
+      return `${date}_${time}`;
+    }
+
+    function formatDate(date, options = { weekday: "long", month: "long", day: "numeric" }) {
+      return new Intl.DateTimeFormat("en-FJ", { ...options, timeZone: "Pacific/Fiji" }).format(new Date(`${date}T12:00:00+12:00`));
+    }
+
+    function formatTime(time) {
+      const [hour, minute] = time.split(":").map(Number);
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${String(minute).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
+    }
+
+    function renderDates() {
+      for (const [containerId, dateGroup] of [["week-one", dates.slice(0, 5)], ["week-two", dates.slice(5)]]) {
+        const container = document.getElementById(containerId);
+        container.replaceChildren();
+        for (const date of dateGroup) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "date-button";
+          button.setAttribute("aria-pressed", String(date === selectedDate));
+          button.setAttribute("aria-label", formatDate(date));
+          const dayName = document.createElement("span");
+          dayName.className = "day-name";
+          dayName.textContent = formatDate(date, { weekday: "short" });
+          const dayNumber = document.createElement("span");
+          dayNumber.className = "day-number";
+          dayNumber.textContent = new Intl.DateTimeFormat("en-FJ", { day: "numeric", timeZone: "Pacific/Fiji" }).format(new Date(`${date}T12:00:00+12:00`));
+          button.append(dayName, dayNumber);
+          button.addEventListener("click", () => {
+            selectedDate = date;
+            selectedTime = "";
+            renderDates();
+            renderTimes();
+            updateSubmitState();
+          });
+          container.append(button);
+        }
+      }
+    }
+
+    function renderTimes() {
+      selectedDateLabel.textContent = formatDate(selectedDate);
+      timeGrid.replaceChildren();
+      const availableCount = times.filter(time => !bookedSlots.has(slotId(selectedDate, time))).length;
+      dayAvailability.textContent = `${availableCount} of ${times.length} available`;
+      for (const time of times) {
+        const id = slotId(selectedDate, time);
+        const reservation = bookedSlots.get(id);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "time-button";
+        button.textContent = formatTime(time);
+        button.disabled = Boolean(reservation);
+        button.setAttribute("aria-pressed", String(time === selectedTime));
+        if (reservation) {
+          const bookedAgency = agencyNames.get(reservation.agencyId) || "another agency";
+          button.setAttribute("aria-label", `${formatTime(time)}, booked by ${bookedAgency}`);
+          button.title = `Booked by ${bookedAgency}`;
+        } else {
+          button.setAttribute("aria-label", `${formatTime(time)}, available`);
+          button.addEventListener("click", () => {
+            selectedTime = time;
+            setMessage();
+            renderTimes();
+            updateSubmitState();
+          });
+        }
+        timeGrid.append(button);
+      }
+    }
+
+    function updateSubmitState() {
+      submitButton.disabled = !db || submitting || checkingAgency || agencyAlreadyBooked || !agencySelect.value || !selectedTime;
+      submitButton.textContent = submitting ? "Saving your booking..." : "Confirm consultation";
+    }
+
+    async function checkAgencyReservation() {
+      const agencyId = agencySelect.value;
+      agencyAlreadyBooked = false;
+      checkingAgency = Boolean(agencyId && db);
+      setMessage();
+      updateSubmitState();
+      if (!agencyId || !db) return;
+      try {
+        const reservation = await getDoc(doc(db, "agencyReservations", agencyId));
+        agencyAlreadyBooked = reservation.exists();
+        if (agencyAlreadyBooked) {
+          const booking = reservation.data();
+          setMessage(`Your agency already has a booking on ${formatDate(booking.date)} at ${formatTime(booking.time)}.`, "error");
+          selectedTime = "";
+          renderTimes();
+        }
+      } catch {
+        setMessage("We couldn't check this agency's booking. Please refresh and try again.", "error");
+      } finally {
+        checkingAgency = false;
+        updateSubmitState();
+      }
+    }
+
+    function showLoadError(error) {
+      console.error("SAMBIO calendar connection failed:", error);
+      setConnection("Calendar unavailable. Check your connection or Firestore setup, then refresh.", "error");
+      updateSubmitState();
+    }
+
+    for (const [id, name] of agencies) {
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = name;
+      agencySelect.append(option);
+    }
+
+    renderDates();
+    renderTimes();
+
+    agencySelect.addEventListener("change", checkAgencyReservation);
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!form.reportValidity() || !db || !selectedTime || !agencySelect.value || submitting) return;
+      const agencyId = agencySelect.value;
+      const name = document.querySelector("#contact-name").value.trim();
+      const email = document.querySelector("#email").value.trim();
+      const notes = document.querySelector("#notes").value.trim();
+      const mode = form.querySelector('input[name="mode"]:checked').value;
+      const id = slotId(selectedDate, selectedTime);
+      const slotRef = doc(db, "meetingSlots", id);
+      const reservationRef = doc(db, "agencyReservations", agencyId);
+      const contactRef = doc(db, "bookingContacts", agencyId);
+      submitting = true;
+      setMessage();
+      updateSubmitState();
+
+      try {
+        await runTransaction(db, async transaction => {
+          const [slotSnapshot, reservationSnapshot] = await Promise.all([
+            transaction.get(slotRef),
+            transaction.get(reservationRef)
+          ]);
+          if (slotSnapshot.exists()) throw new Error("slot-taken");
+          if (reservationSnapshot.exists()) throw new Error("agency-booked");
+          const createdAt = Timestamp.now();
+          transaction.set(slotRef, { agencyId, date: selectedDate, time: selectedTime, mode, createdAt });
+          transaction.set(reservationRef, { slotId: id, date: selectedDate, time: selectedTime, mode, createdAt });
+          transaction.set(contactRef, { agencyId, name, email, notes, createdAt });
+        });
+        agencyAlreadyBooked = true;
+        selectedTime = "";
+        form.reset();
+        setMessage(`Booking confirmed for ${formatDate(selectedDate)} at ${formatTime(id.split("_")[1])}. A project coordinator will follow up by email.`, "success");
+      } catch (error) {
+        console.error("SAMBIO booking failed:", error);
+        if (error.message === "slot-taken") {
+          setMessage("That time was just booked. Please choose another available slot.", "error");
+        } else if (error.message === "agency-booked") {
+          agencyAlreadyBooked = true;
+          setMessage("Your agency already has a consultation booking.", "error");
+        } else {
+          setMessage("Your booking could not be saved. Please try again or contact the project coordinator.", "error");
+        }
+      } finally {
+        submitting = false;
+        renderTimes();
+        updateSubmitState();
+      }
+    });
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app, "sambio-calendar");
+      const slotsQuery = query(
+        collection(db, "meetingSlots"),
+        where("date", ">=", dates[0]),
+        where("date", "<=", dates[dates.length - 1])
+      );
+      onSnapshot(slotsQuery, snapshot => {
+        clearTimeout(connectionTimer);
+        bookedSlots = new Map(snapshot.docs.map(slot => [slot.id, slot.data()]));
+        setConnection("Connected. Slot Availability Updates Automatically.", "ready");
+        renderTimes();
+        updateSubmitState();
+      }, showLoadError);
+      connectionTimer = setTimeout(() => {
+        if (connection.dataset.state === "loading") {
+          setConnection("Firestore is not responding. Check the sambio-calendar database and its published rules, then refresh.", "error");
+        }
+      }, 8000);
+    } catch (error) {
+      showLoadError(error);
+    }
+  </script>
+</body>
+</html>

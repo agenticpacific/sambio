@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function validAgency(agencyId) {
+      return agencyId in [
+        'strategic-planning', 'fiji-bureau-statistics', 'fisheries', 'forestry',
+        'lands-mineral-resources', 'biosecurity', 'lmma', 'naturefiji', 'wcs-fiji',
+        'manta-trust', 'usp'
+      ];
+    }
+
+    function validDate(date) {
+      return date in [
+        '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16',
+        '2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'
+      ];
+    }
+
+    function validTime(time) {
+      return time in [
+        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00',
+        '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'
+      ];
+    }
+
+    function validMode(mode) {
+      return mode in ['face-to-face', 'online'];
+    }
+
+    match /meetingSlots/{slotId} {
+      allow get, list: if true;
+      allow create: if request.resource.data.keys().hasAll(['agencyId', 'date', 'time', 'mode', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['agencyId', 'date', 'time', 'mode', 'createdAt'])
+        && validAgency(request.resource.data.agencyId)
+        && validDate(request.resource.data.date)
+        && validTime(request.resource.data.time)
+        && slotId == request.resource.data.date + '_' + request.resource.data.time
+        && validMode(request.resource.data.mode)
+        && request.resource.data.createdAt is timestamp
+        && !exists(/databases/$(database)/documents/meetingSlots/$(slotId))
+        && !exists(/databases/$(database)/documents/agencyReservations/$(request.resource.data.agencyId))
+        && existsAfter(/databases/$(database)/documents/agencyReservations/$(request.resource.data.agencyId))
+        && getAfter(/databases/$(database)/documents/agencyReservations/$(request.resource.data.agencyId)).data.slotId == slotId
+        && existsAfter(/databases/$(database)/documents/bookingContacts/$(request.resource.data.agencyId))
+        && getAfter(/databases/$(database)/documents/bookingContacts/$(request.resource.data.agencyId)).data.agencyId == request.resource.data.agencyId;
+      allow update, delete: if false;
+    }
+
+    match /agencyReservations/{agencyId} {
+      allow get: if validAgency(agencyId);
+      allow list: if false;
+      allow create: if validAgency(agencyId)
+        && request.resource.data.keys().hasAll(['slotId', 'date', 'time', 'mode', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['slotId', 'date', 'time', 'mode', 'createdAt'])
+        && validDate(request.resource.data.date)
+        && validTime(request.resource.data.time)
+        && request.resource.data.slotId == request.resource.data.date + '_' + request.resource.data.time
+        && validMode(request.resource.data.mode)
+        && request.resource.data.createdAt is timestamp
+        && !exists(/databases/$(database)/documents/agencyReservations/$(agencyId))
+        && existsAfter(/databases/$(database)/documents/meetingSlots/$(request.resource.data.slotId))
+        && getAfter(/databases/$(database)/documents/meetingSlots/$(request.resource.data.slotId)).data.agencyId == agencyId
+        && existsAfter(/databases/$(database)/documents/bookingContacts/$(agencyId))
+        && getAfter(/databases/$(database)/documents/bookingContacts/$(agencyId)).data.agencyId == agencyId;
+      allow update, delete: if false;
+    }
+
+    match /bookingContacts/{agencyId} {
+      allow create: if validAgency(agencyId)
+        && request.resource.data.keys().hasAll(['agencyId', 'name', 'email', 'notes', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['agencyId', 'name', 'email', 'notes', 'createdAt'])
+        && request.resource.data.agencyId == agencyId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 1000
+        && request.resource.data.createdAt is timestamp
+        && !exists(/databases/$(database)/documents/bookingContacts/$(agencyId))
+        && existsAfter(/databases/$(database)/documents/agencyReservations/$(agencyId))
+        && getAfter(/databases/$(database)/documents/agencyReservations/$(agencyId)).data.slotId
+          == getAfter(/databases/$(database)/documents/meetingSlots/$(getAfter(/databases/$(database)/documents/agencyReservations/$(agencyId)).data.slotId)).data.date
+            + '_' + getAfter(/databases/$(database)/documents/agencyReservations/$(agencyId)).data.time;
+      allow get, list: if true;
+      allow update, delete: if false;
+    }
+  }
+}
