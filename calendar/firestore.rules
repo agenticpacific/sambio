@@ -6,7 +6,7 @@ service cloud.firestore {
         'fiji-bureau-statistics', 'fisheries', 'forestry',
         'lands-mineral-resources', 'biosecurity', 'lmma', 'naturefiji', 'wcs-fiji',
         'manta-trust', 'usp', 'wetlands-pasifika', 'national-trust-fiji',
-        'itaukei-affairs-board', 'agriculture-waterways-sugar-industry',
+        'itaukei-affairs-board', 'itaukei-land-trust-board', 'agriculture-waterways-sugar-industry',
         'wwf', 'live-learn-fiji'
       ];
     }
@@ -14,7 +14,7 @@ service cloud.firestore {
     function validDate(date) {
       return date in [
         '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16',
-        '2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'
+        '2026-10-21', '2026-10-22', '2026-10-23'
       ];
     }
 

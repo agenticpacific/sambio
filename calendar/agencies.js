@@ -2,6 +2,7 @@ export const agencies = [
   ["biosecurity", "Biosecurity Authority of Fiji"],
   ["fiji-bureau-statistics", "Fiji Bureau of Statistics"],
   ["itaukei-affairs-board", "iTaukei Affairs Board"],
+  ["itaukei-land-trust-board", "iTaukei Land Trust Board (TLTB)"],
   ["live-learn-fiji", "Live & Learn Fiji"],
   ["lmma", "Locally Managed Marine Areas (LMMA)"],
   ["manta-trust", "Manta Trust"],
