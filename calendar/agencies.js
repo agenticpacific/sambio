@@ -3,7 +3,7 @@ export const agencies = [
   ["fiji-bureau-statistics", "Fiji Bureau of Statistics"],
   ["itaukei-affairs-board", "iTaukei Affairs Board"],
   ["live-learn-fiji", "Live & Learn Fiji"],
-  ["lmma", "Fiji Locally Managed Marine Areas (LMMA)"],
+  ["lmma", "Locally Managed Marine Areas (LMMA)"],
   ["manta-trust", "Manta Trust"],
   ["agriculture-waterways-sugar-industry", "Ministry of Agriculture, Waterways & Sugar Industry"],
   ["fisheries", "Ministry of Fisheries"],
