@@ -302,7 +302,7 @@
     </svg>
     <div>
       <h1>Pacific Indicators Explorer /w Forecasted Projections</h1>
-      <p id="subtitle">Official Environment, Climate, Emissions, Biodiversity, Energy, Vulnerability &amp; Disaster Risk and other Development Indicators · Times Foundation Model 3 Forecasts to 2050</p>
+      <p id="subtitle">Official Environment, Climate, Emissions, Biodiversity, Energy, Vulnerability &amp; Disaster Risk and other Development Indicators · Times Foundation Model v3.0 Forecasts to 2050</p>
     </div>
   </div>
   <div class="header-stats" id="header-stats" aria-label="Dataset summary"></div>
@@ -902,7 +902,7 @@
   function renderNotes() {
     $("#notes").innerHTML = `Sources: UN Data Commons (UN Statistics Division); Pacific Data Hub .Stat (SPC) for GHG per capita and climate anomalies;
       Our World in Data CO₂ &amp; GHG dataset; Climate Watch (WRI) for sectoral emissions and NDC content.
-      Forecasts: zero-shot Google TimesFM 3.0 <b>${esc(D.model)}</b> to ${D.target_year || 2050}, shown as median (dashed) with a 10th–90th percentile interval.
+      Forecasts: zero-shot Google TimesFM v3.0 <b>${esc(D.model)}</b> to ${D.target_year || 2050}, shown as median (dashed) with a 10th–90th percentile interval.
       Series with fewer than 5 observed years or categorical status flags are shown as history only. Gaps between observed years are linearly interpolated (no marker).
       Long-horizon forecasts from short histories are indicative only. Data bundle generated ${esc(D.generated)}.
       Tip: drag the slider or hold <kbd>Ctrl</kbd> and scroll to zoom; click legend entries to hide series.`;
