@@ -3,9 +3,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function validAgency(agencyId) {
       return agencyId in [
-        'strategic-planning', 'fiji-bureau-statistics', 'fisheries', 'forestry',
+        'fiji-bureau-statistics', 'fisheries', 'forestry',
         'lands-mineral-resources', 'biosecurity', 'lmma', 'naturefiji', 'wcs-fiji',
-        'manta-trust', 'usp'
+        'manta-trust', 'usp', 'wetlands-pasifika', 'national-trust-fiji',
+        'itaukei-affairs-board', 'agriculture-waterways-sugar-industry',
+        'wwf', 'live-learn-fiji'
       ];
     }
 

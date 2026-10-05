@@ -1,13 +1,18 @@
 export const agencies = [
   ["biosecurity", "Biosecurity Authority of Fiji"],
   ["fiji-bureau-statistics", "Fiji Bureau of Statistics"],
-  ["lmma", "LMMA"],
+  ["itaukei-affairs-board", "iTaukei Affairs Board"],
+  ["live-learn-fiji", "Live & Learn Fiji"],
+  ["lmma", "Fiji Locally Managed Marine Areas (LMMA)"],
   ["manta-trust", "Manta Trust"],
+  ["agriculture-waterways-sugar-industry", "Ministry of Agriculture, Waterways & Sugar Industry"],
   ["fisheries", "Ministry of Fisheries"],
   ["forestry", "Ministry of Forestry"],
   ["lands-mineral-resources", "Ministry of Lands & Mineral Resources"],
-  ["strategic-planning", "Ministry of Strategic Planning, National Development & Statistics"],
+  ["national-trust-fiji", "National Trust of Fiji"],
   ["naturefiji", "NatureFiji-MareqetiViti"],
   ["usp", "University of the South Pacific (USP)"],
-  ["wcs-fiji", "Wildlife Conservation Society (WCS Fiji)"]
+  ["wetlands-pasifika", "Wetlands Pasifika"],
+  ["wcs-fiji", "Wildlife Conservation Society (WCS Fiji)"],
+  ["wwf", "World Wildlife Fund (WWF)"]
 ];

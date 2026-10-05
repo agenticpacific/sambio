@@ -215,7 +215,10 @@
         ...slot,
         agency: agencyNames.get(slot.agencyId) || slot.agencyId || "Unknown agency",
         contact: contacts.get(slot.agencyId) || {}
-      })).sort((first, second) => `${first.date}_${first.time}`.localeCompare(`${second.date}_${second.time}`));
+      })).sort((first, second) =>
+        first.agency.localeCompare(second.agency, undefined, { sensitivity: "base" })
+        || `${first.date}_${first.time}`.localeCompare(`${second.date}_${second.time}`)
+      );
       const term = search.value.trim().toLocaleLowerCase();
       const visible = bookings.filter(booking => [
         booking.agency, booking.date, booking.time, booking.mode,
