@@ -113,6 +113,11 @@ select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
 @media(max-width:1000px){.pipap-layout{grid-template-columns:1fr}}
 #pipap-map{height:420px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
 #pipap-twrap{max-height:420px}
+.kba-layout{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;align-items:start}
+@media(max-width:1000px){.kba-layout{grid-template-columns:1fr}}
+#kba-map{height:520px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+#kba-twrap{max-height:520px}
+.empty-state{padding:22px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:13px}
 th[data-sort]{cursor:pointer;user-select:none}
 th[data-sort]:hover{color:var(--accent)}
 th.sorted::after{content:" \25BC"}
@@ -273,15 +278,17 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
       <div class="card span12">
         <h3>
           <span class="tabs" id="map-tabs">
-            <button class="tab active" data-tab="wdpa">Protected areas &mdash; WDPA Fiji</button>
-            <button class="tab" data-tab="pipap">National register &mdash; SPREP Protected Areas Portal (PIPAP)</button>
-            <button class="tab" data-tab="wetlands">Wetlands &mdash; Fiji wetland sites</button>
-            <button class="tab" data-tab="iucn">IUCN Red List &mdash; Fiji species</button>
+            <button class="tab active" data-tab="wdpa">Protected Areas - WDPA Fiji</button>
+            <button class="tab" data-tab="kba">Key Biodiversity Areas - WKBA Fiji</button>
+            <button class="tab" data-tab="pipap">SPREP Protected Areas (PIPAP)</button>
+            <button class="tab" data-tab="wetlands">Fiji Wetland Sites</button>
+            <button class="tab" data-tab="iucn">IUCN Red List - Fiji Species</button>
           </span>
           <span class="sub" id="map-sub"></span>
           <span class="sub" id="pipap-sub" hidden></span>
           <span class="sub" id="wetlands-sub" hidden></span>
           <span class="sub" id="iucn-sub" hidden></span>
+          <span class="sub" id="kba-sub" hidden></span>
         </h3>
         <div class="body" id="tab-wdpa">
           <div class="map-ctl">
@@ -374,6 +381,43 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:v
           </div>
           <div style="margin-top:8px"><button id="iucn-more" hidden>Show more</button></div>
         </div>
+        <div class="body" id="tab-kba" hidden>
+          <p class="muted" style="font-size:12.5px;margin:0 0 10px">
+            Fiji Key Biodiversity Areas from <a href="https://datazone.birdlife.org/" target="_blank" rel="noopener">Birdlife DataZone</a> (WKBA).
+            Map polygons are styled by KBA class and labeled with their international name (national name where needed).
+            Use is subject to the WDKBA non-commercial terms and attribution requirements.
+          </p>
+          <div class="map-ctl">
+            <input type="search" id="kba-q" placeholder="Search KBA names…" style="min-width:220px">
+            <select id="kba-class"><option value="">All classes</option></select>
+            <select id="kba-status"><option value="">All statuses</option></select>
+            <button id="kba-fit">Zoom to Fiji</button>
+          </div>
+          <div id="kba-empty" class="empty-state" hidden>
+            No KBA boundary features are available in <code>fj-kba.geojson</code>.
+            Add the Birdlife DataZone Fiji export and rebuild the master sheet to populate this register.
+          </div>
+          <div class="kba-layout">
+            <div class="twrap" id="kba-twrap">
+              <table>
+                <thead><tr>
+                  <th data-sort="IntName" style="width:24%">International name</th>
+                  <th data-sort="NatName">National name</th>
+                  <th data-sort="KbaClass">Class</th>
+                  <th data-sort="KbaStatus">Status</th>
+                  <th data-sort="IbaStatus">IBA</th>
+                  <th data-sort="area_km2" class="num">Area km&sup2;</th>
+                  <th data-sort="LastUpdate" class="num">Updated</th>
+                </tr></thead>
+                <tbody id="kba-tbody"></tbody>
+              </table>
+            </div>
+            <div>
+              <div id="kba-map"></div>
+              <div class="legend" id="kba-legend"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="card span12">
@@ -426,6 +470,12 @@ const IUCN_COLOR = {
   EX: "#000000", EW: "#542344", CR: "#d81e05", EN: "#fc7f3f",
   VU: "#f9e814", NT: "#cce226", LC: "#60c659", DD: "#d1d1c6"
 };
+const KBA_CLASS_COLOR = {
+  "Global": "#2b8a3e",
+  "Regional": "#1971c2",
+  "Global/Regional TBD": "#e67700"
+};
+const KBA_FALLBACK = "#868e96";
 
 // Fiji in the continuous Pacific frame the protected area layer uses.
 const FIJI_BOUNDS = [[176.6, -21.2], [181.6, -12.2]];
@@ -511,7 +561,7 @@ const pct = d3.format(".0%");
 /* -------------------------------------------------------------------- boot */
 
 Promise.allSettled([
-  d3.json(MASTERSHEET),
+  d3.json(`${MASTERSHEET}?v=${Date.now()}`, { cache: "no-store" }),
   d3.json(PA_LAYER),
   d3.json(PIPAP_REGISTER),
   d3.json(WETLANDS_LAYER),
@@ -564,6 +614,7 @@ function init() {
   initPipap();
   initWetlands();
   initIucn();
+  initKba();
   initTabs();
 
   document.getElementById("q").addEventListener("input", e => {
@@ -585,22 +636,44 @@ function init() {
 }
 
 function renderHeader() {
-  const d = state.data, s = d.summary;
+  const d = state.data;
+  const records = Array.isArray(d.records) ? d.records : [];
+  const countType = type => records.filter(r => r.record_type === type).length;
+  const tagged = records.filter(r =>
+    ["provinces", "islands", "villages"].some(level =>
+      Array.isArray(r.location && r.location[level]) && r.location[level].length
+    )
+  );
+  const uniqueLocations = level => new Set(
+    records.flatMap(r => Array.isArray(r.location && r.location[level]) ? r.location[level] : [])
+  ).size;
+  const sumExtra = key => records
+    .filter(r => r.record_type === "protected_area")
+    .reduce((total, r) => total + (Number(r.extra && r.extra[key]) || 0), 0);
+  const totalRecords = records.length;
+  const marineArea = sumExtra("marine_area_km2");
+  const protectedArea = sumExtra("gis_area_km2");
   document.getElementById("hdr-meta").innerHTML = [
     `Last Updated On <b>${d.generated.replace("T", " ").replace("Z", " UTC")}</b>`,
-    `Consisting Of <b>${fmt(d.record_count)}</b> Records Across`,
+    `Consisting Of <b>${fmt(totalRecords)}</b> Records Across`,
     `<b>${d.sources.length}</b> Platforms`,
   ].join("");
 
   const kpis = [
-    { v: fmt(s.datasets), l: "Datasets", s: "de-duplicated catalogue entries" },
-    { v: fmt(s.protected_areas), l: "Protected areas", s: `${fmt(Math.round(s.protected_area_km2))} km² total` },
-    { v: pct(s.geotagged_share), l: "Geotagged", s: `${fmt(s.geotagged_records)} records placed` },
-    { v: fmt(s.provinces_covered) + "/15", l: "Provinces", s: "with data holdings" },
-    { v: fmt(s.islands_covered), l: "Islands", s: "named islands referenced" },
-    { v: fmt(s.villages_covered), l: "Villages", s: "villages referenced" },
-    { v: fmt(Math.round(s.protected_marine_km2)), l: "Marine protected km²", s: pct(s.protected_marine_km2 / s.protected_area_km2) + " of protected area" },
-    { v: fmt(s.geospatial_records), l: "Geospatial", s: "machine-readable spatial formats" }
+    { v: fmt(totalRecords), l: "Total records", s: "all record types in the master sheet" },
+    { v: fmt(countType("dataset")), l: "Datasets", s: "de-duplicated catalogue entries" },
+    { v: fmt(countType("protected_area")), l: "Protected areas", s: `${fmt(Math.round(protectedArea))} km² total` },
+    { v: fmt(state.pipap.count || 0), l: "PIPAP sites", s: "national register entries" },
+    { v: fmt(countType("seabird_colony")), l: "Seabird colonies", s: "Pacific Seabird Database" },
+    { v: fmt(state.iucn.count || state.iucn.rows.length), l: "IUCN species", s: "assessed species in Fiji" },
+    { v: fmt(countType("kba")), l: "KBA sites", s: "Birdlife DataZone" },
+    { v: pct(tagged.length / (totalRecords || 1)), l: "Geotagged", s: `${fmt(tagged.length)} records tagged to a place` },
+    { v: fmt(uniqueLocations("provinces")) + "/15", l: "Provinces", s: "with data holdings" },
+    { v: fmt(uniqueLocations("islands")), l: "Islands", s: "named islands referenced" },
+    { v: fmt(uniqueLocations("villages")), l: "Villages", s: "villages referenced" },
+    { v: fmt(Math.round(marineArea)), l: "Marine protected km²", s: pct(marineArea / (protectedArea || 1)) + " of protected area" },
+    { v: fmt(records.filter(r => r.is_geospatial).length), l: "Geospatial", s: "machine-readable spatial formats" },
+    { v: fmt(records.filter(r => r.is_open).length), l: "Open licence", s: "records with an open licence" }
   ];
   document.getElementById("kpis").innerHTML = kpis.map(k =>
     `<div class="kpi"><div class="v">${k.v}</div><div class="l">${k.l}</div><div class="s">${k.s}</div></div>`
@@ -1351,6 +1424,7 @@ const emptyFC = () => ({ type: "FeatureCollection", features: [] });
 function initTabs() {
   let pipapShown = false;
   let wetlandsShown = false;
+  let kbaShown = false;
   document.querySelectorAll("#map-tabs .tab").forEach(btn => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.tab;
@@ -1360,7 +1434,9 @@ function initTabs() {
       document.getElementById("tab-pipap").hidden = tab !== "pipap";
       document.getElementById("tab-wetlands").hidden = tab !== "wetlands";
       document.getElementById("tab-iucn").hidden = tab !== "iucn";
+      document.getElementById("tab-kba").hidden = tab !== "kba";
       document.getElementById("iucn-sub").hidden = tab !== "iucn";
+      document.getElementById("kba-sub").hidden = tab !== "kba";
       document.getElementById("map-sub").hidden = tab !== "wdpa";
       document.getElementById("pipap-sub").hidden = tab !== "pipap";
       document.getElementById("wetlands-sub").hidden = tab !== "wetlands";
@@ -1379,6 +1455,13 @@ function initTabs() {
           if (!wetlandsShown) {
             state.wetlandsMap.fitBounds(FIJI_BOUNDS, { padding: 24, duration: 0 });
             wetlandsShown = true;
+          }
+        }
+        if (tab === "kba" && state.kbaMap) {
+          state.kbaMap.resize();
+          if (!kbaShown) {
+            state.kbaMap.fitBounds(FIJI_BOUNDS, { padding: 24, duration: 0 });
+            kbaShown = true;
           }
         }
       });
@@ -1659,6 +1742,176 @@ function pipapFocus(d) {
   const lon = d.centroid[0] < 0 ? d.centroid[0] + 360 : d.centroid[0];
   state.pipapMap.easeTo({ center: [lon, d.centroid[1]], zoom: 10 });
   const rec = d.wdpa_uid ? state.records.find(r => r.uid === d.wdpa_uid) : null;
+  if (rec) openDrawer(rec);
+}
+
+/* ----------------------------------------------------------------------- kba */
+
+function initKba() {
+  const features = state.kba.features || [];
+  const classes = [...new Set(features.map(f => f.properties.KbaClass).filter(Boolean))].sort();
+  const statuses = [...new Set(features.map(f => f.properties.KbaStatus).filter(Boolean))].sort();
+  state.kbaSort = { key: "IntName", dir: "asc" };
+  document.getElementById("kba-empty").hidden = features.length > 0;
+  document.getElementById("kba-sub").textContent = `${fmt(features.length)} Fiji KBA sites`;
+
+  d3.select("#kba-class").selectAll("option.opt").data(classes).join("option")
+    .attr("class", "opt").attr("value", d => d).text(d => d);
+  d3.select("#kba-status").selectAll("option.opt").data(statuses).join("option")
+    .attr("class", "opt").attr("value", d => d).text(d => d);
+
+  const style = {
+    version: 8,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    sources: {
+      demo: {
+        type: "vector", url: "https://demotiles.maplibre.org/tiles/tiles.json",
+        attribution: '&copy; <a href="https://maplibre.org/">MapLibre</a> · Data: <a href="https://datazone.birdlife.org/" target="_blank" rel="noopener">Birdlife DataZone</a> (WKBA)'
+      }
+    },
+    layers: [
+      { id: "bg", type: "background", paint: { "background-color": "#dfeaf0" } },
+      { id: "demo-land", type: "fill", source: "demo", "source-layer": "countries",
+        paint: { "fill-color": "#f2f6f4", "fill-outline-color": "#c3d3da" } }
+    ]
+  };
+  const map = new maplibregl.Map({
+    container: "kba-map", style,
+    bounds: FIJI_BOUNDS, fitBoundsOptions: { padding: 24 },
+    attributionControl: { compact: true }
+  });
+  state.kbaMap = map;
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 110, unit: "metric" }));
+
+  const fillColor = ["match", ["get", "KbaClass"]];
+  classes.forEach(value => fillColor.push(value, KBA_CLASS_COLOR[value] || KBA_FALLBACK));
+  fillColor.push(KBA_FALLBACK);
+  const lineColor = fillColor.slice();
+
+  map.on("load", () => {
+    map.addSource("kba-sites", { type: "geojson", data: emptyFC() });
+    map.addLayer({
+      id: "kba-sites-fill", type: "fill", source: "kba-sites",
+      paint: { "fill-color": fillColor, "fill-opacity": 0.48 }
+    });
+    map.addLayer({
+      id: "kba-sites-line", type: "line", source: "kba-sites",
+      paint: { "line-color": lineColor, "line-width": 1.2, "line-opacity": 0.95 }
+    });
+    map.addLayer({
+      id: "kba-sites-label", type: "symbol", source: "kba-sites",
+      minzoom: 5,
+      layout: {
+        "text-field": ["coalesce", ["get", "IntName"], ["get", "NatName"], ["get", "name"]],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 5, 8, 8, 10, 13, 14],
+        "text-anchor": "center", "text-allow-overlap": false, "text-padding": 3,
+        "text-max-width": 10
+      },
+      paint: { "text-color": "#17351f", "text-halo-color": "#ffffff", "text-halo-width": 1.7 }
+    });
+    document.getElementById("kba-legend").innerHTML = classes.map(value =>
+      `<span><i style="background:${KBA_CLASS_COLOR[value] || KBA_FALLBACK}"></i>${esc(value)}</span>`).join("");
+
+    const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "320px" });
+    const showKbaPopup = e => {
+      const p = e.features[0].properties;
+      popup.setLngLat(e.lngLat).setHTML(`
+        <h4>${esc(p.IntName || p.NatName || p.name || "Key Biodiversity Area")}</h4>
+        <dl>
+          <dt>National name</dt><dd>${esc(p.NatName || "—")}</dd>
+          <dt>Class</dt><dd>${esc(p.KbaClass || "—")}</dd>
+          <dt>Status</dt><dd>${esc(p.KbaStatus || "—")}</dd>
+          <dt>IBA status</dt><dd>${esc(p.IbaStatus || "—")}</dd>
+          <dt>Area</dt><dd>${p.area_km2 != null ? `${fmt(round2(+p.area_km2))} km²` : "—"}</dd>
+          <dt>Last update</dt><dd>${esc(p.LastUpdate || "—")}</dd>
+        </dl>`).addTo(map);
+    };
+    ["kba-sites-fill", "kba-sites-line", "kba-sites-label"].forEach(id => {
+      map.on("click", id, showKbaPopup);
+      map.on("mouseenter", id, () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", id, () => map.getCanvas().style.cursor = "");
+    });
+    state.kbaMapReady = true;
+    renderKba();
+  });
+
+  document.getElementById("kba-q").addEventListener("input", renderKba);
+  document.getElementById("kba-class").addEventListener("change", renderKba);
+  document.getElementById("kba-status").addEventListener("change", renderKba);
+  document.getElementById("kba-fit").addEventListener("click", () =>
+    map.fitBounds(FIJI_BOUNDS, { padding: 24 }));
+  document.querySelectorAll("#kba-twrap th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      state.kbaSort = state.kbaSort.key === key
+        ? { key, dir: state.kbaSort.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "area_km2" || key === "LastUpdate" ? "desc" : "asc" };
+      renderKba();
+    });
+  });
+  renderKba();
+}
+
+function kbaFiltered() {
+  const q = (document.getElementById("kba-q").value || "").trim().toLowerCase();
+  const kbaClass = document.getElementById("kba-class").value;
+  const status = document.getElementById("kba-status").value;
+  return (state.kba.features || []).filter(f => {
+    const p = f.properties || {};
+    if (kbaClass && p.KbaClass !== kbaClass) return false;
+    if (status && p.KbaStatus !== status) return false;
+    if (q && !`${p.IntName || ""} ${p.NatName || ""}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function renderKba() {
+  const features = kbaFiltered();
+  const { key, dir } = state.kbaSort;
+  const mult = dir === "asc" ? 1 : -1;
+  features.sort((a, b) => {
+    const x = a.properties[key], y = b.properties[key];
+    if (x == null && y == null) return 0;
+    if (x == null || x === "") return 1;
+    if (y == null || y === "") return -1;
+    const d = typeof x === "string" ? x.localeCompare(y) : x - y;
+    return d * mult;
+  });
+
+  document.querySelectorAll("#kba-twrap th[data-sort]").forEach(th => {
+    th.classList.toggle("sorted", th.dataset.sort === key);
+    th.classList.toggle("asc", th.dataset.sort === key && dir === "asc");
+  });
+  const rows = d3.select("#kba-tbody").selectAll("tr")
+    .data(features, f => f.properties.uid || f.properties.SitRecID).join("tr");
+  rows.html(f => {
+    const p = f.properties;
+    const area = p.area_km2;
+    return `<td>${esc(p.IntName || p.name || "—")}</td>
+      <td>${esc(p.NatName || "—")}</td>
+      <td><span class="badge" style="background:${KBA_CLASS_COLOR[p.KbaClass] || KBA_FALLBACK};color:#fff">${esc(p.KbaClass || "—")}</span></td>
+      <td>${esc(p.KbaStatus || "—")}</td>
+      <td>${esc(p.IbaStatus || "—")}</td>
+      <td class="num">${area != null ? fmt(round2(+area)) : "—"}</td>
+      <td class="num">${esc(p.LastUpdate || "—")}</td>`;
+  }).on("click", (_, f) => focusKba(f));
+
+  document.getElementById("kba-sub").textContent =
+    `${fmt(features.length)} of ${fmt((state.kba.features || []).length)} Fiji KBA sites`;
+  if (state.kbaMapReady) {
+    state.kbaMap.getSource("kba-sites").setData({ type: "FeatureCollection", features });
+  }
+}
+
+function focusKba(feature) {
+  const p = feature.properties || {};
+  if (state.kbaMapReady && p.SitLong != null && p.SitLat != null) {
+    const lon = +p.SitLong < 0 ? +p.SitLong + 360 : +p.SitLong;
+    state.kbaMap.easeTo({ center: [lon, +p.SitLat], zoom: 10.5 });
+  }
+  const rec = state.records.find(r => r.uid === p.uid);
   if (rec) openDrawer(rec);
 }
 
