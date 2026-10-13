@@ -31,13 +31,14 @@ service cloud.firestore {
 
     match /meetingSlots/{slotId} {
       allow get, list: if true;
-      allow create: if request.resource.data.keys().hasAll(['agencyId', 'date', 'time', 'mode', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['agencyId', 'date', 'time', 'mode', 'createdAt'])
+      allow create: if request.resource.data.keys().hasAll(['agencyId', 'date', 'time', 'mode', 'durationMinutes', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['agencyId', 'date', 'time', 'mode', 'durationMinutes', 'createdAt'])
         && validAgency(request.resource.data.agencyId)
         && validDate(request.resource.data.date)
         && validTime(request.resource.data.time)
         && slotId == request.resource.data.date + '_' + request.resource.data.time
         && validMode(request.resource.data.mode)
+        && request.resource.data.durationMinutes == 60
         && request.resource.data.createdAt is timestamp
         && !exists(/databases/$(database)/documents/meetingSlots/$(slotId))
         && !exists(/databases/$(database)/documents/agencyReservations/$(request.resource.data.agencyId))
@@ -52,12 +53,13 @@ service cloud.firestore {
       allow get: if validAgency(agencyId);
       allow list: if false;
       allow create: if validAgency(agencyId)
-        && request.resource.data.keys().hasAll(['slotId', 'date', 'time', 'mode', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['slotId', 'date', 'time', 'mode', 'createdAt'])
+        && request.resource.data.keys().hasAll(['slotId', 'date', 'time', 'mode', 'durationMinutes', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['slotId', 'date', 'time', 'mode', 'durationMinutes', 'createdAt'])
         && validDate(request.resource.data.date)
         && validTime(request.resource.data.time)
         && request.resource.data.slotId == request.resource.data.date + '_' + request.resource.data.time
         && validMode(request.resource.data.mode)
+        && request.resource.data.durationMinutes == 60
         && request.resource.data.createdAt is timestamp
         && !exists(/databases/$(database)/documents/agencyReservations/$(agencyId))
         && existsAfter(/databases/$(database)/documents/meetingSlots/$(request.resource.data.slotId))
