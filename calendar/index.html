@@ -161,7 +161,7 @@
       <p class="eyebrow">SAMBIO project · Stakeholder and Partner Consultation Meetings</p>
       <h1 id="page-title">Contribute towards building Fiji's Environmental Data Systems</h1>
       <div class="intro-row">
-        <p class="intro-copy">Book a 30-minute consultation to discuss data requirements and collaboration for the SAMBIO Projects's <b>National Protected Area Data Management System, the Online Biodiversity Tracking System</b>, and the national <b>Environmental Data Warehouse (EDW)</b>.</p>
+        <p class="intro-copy">Book a 1-hour consultation to discuss data requirements and collaboration for the SAMBIO Projects's <b>National Protected Area Data Management System, the Online Biodiversity Tracking System</b>, and the national <b>Environmental Data Warehouse (EDW)</b>.</p>
         <div class="date-range">12–23 October 2026</div>
       </div>
     </section>
@@ -207,7 +207,7 @@
 
       <section class="panel" aria-labelledby="calendar-title">
         <div class="panel-heading">
-          <div><h2 id="calendar-title">Choose a time</h2><p>Select a weekday, then an available 30-minute slot.</p></div>
+          <div><h2 id="calendar-title">Choose a time</h2><p>Select a weekday, then an available 1-hour slot.</p></div>
           <span class="step" aria-hidden="true">2</span>
         </div>
         <div class="calendar-body">
@@ -219,7 +219,7 @@
           <div id="time-grid" class="time-grid" aria-label="Available meeting times"></div>
           <div class="calendar-foot">
             <div class="legend" aria-label="Calendar legend"><span><i></i>Available</span><span><i class="taken"></i>Booked</span><span><i class="unavailable"></i>Unavailable</span></div>
-            <span>30 minutes</span>
+            <span>1 hour</span>
           </div>
         </div>
       </section>
@@ -260,8 +260,8 @@
       "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23"
     ];
     const unavailableDates = new Set(["2026-10-19", "2026-10-20"]);
-    const times = Array.from({ length: 14 }, (_, index) => {
-      const minutes = 9 * 60 + index * 30;
+    const times = Array.from({ length: 7 }, (_, index) => {
+      const minutes = 9 * 60 + index * 60;
       return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
     });
     const agencyNames = new Map(agencies);
@@ -294,6 +294,39 @@
 
     function slotId(date, time) {
       return `${date}_${time}`;
+    }
+
+    function timeInMinutes(time) {
+      if (!/^\d{2}:\d{2}$/.test(time)) return null;
+      const [hour, minute] = time.split(":").map(Number);
+      if (hour > 23 || minute > 59) return null;
+      return hour * 60 + minute;
+    }
+
+    function bookingDuration(booking) {
+      const duration = Number(booking.durationMinutes);
+      return Number.isFinite(duration) && duration > 0 ? duration : 30;
+    }
+
+    function bookingsOverlap(time, booking) {
+      const start = timeInMinutes(time);
+      const bookingStart = timeInMinutes(booking.time);
+      if (start === null || bookingStart === null) return false;
+      return start < bookingStart + bookingDuration(booking) && bookingStart < start + 60;
+    }
+
+    function conflictingSlotTimes(time) {
+      const start = timeInMinutes(time);
+      return [-30, 0, 30].map(offset => {
+        const minutes = start + offset;
+        return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+      });
+    }
+
+    function findConflictingBooking(date, time) {
+      return [...bookedSlots.values()].find(booking =>
+        booking.date === date && bookingsOverlap(time, booking)
+      );
     }
 
     function formatDate(date, options = { weekday: "long", month: "long", day: "numeric" }) {
@@ -339,11 +372,10 @@
     function renderTimes() {
       selectedDateLabel.textContent = formatDate(selectedDate);
       timeGrid.replaceChildren();
-      const availableCount = times.filter(time => !bookedSlots.has(slotId(selectedDate, time))).length;
+      const availableCount = times.filter(time => !findConflictingBooking(selectedDate, time)).length;
       dayAvailability.textContent = `${availableCount} of ${times.length} available`;
       for (const time of times) {
-        const id = slotId(selectedDate, time);
-        const reservation = bookedSlots.get(id);
+        const reservation = findConflictingBooking(selectedDate, time);
         const button = document.createElement("button");
         button.type = "button";
         button.className = "time-button";
@@ -352,8 +384,8 @@
         button.setAttribute("aria-pressed", String(time === selectedTime));
         if (reservation) {
           const bookedAgency = agencyNames.get(reservation.agencyId) || "another agency";
-          button.setAttribute("aria-label", `${formatTime(time)}, booked by ${bookedAgency}`);
-          button.title = `Booked by ${bookedAgency}`;
+          button.setAttribute("aria-label", `${formatTime(time)}, unavailable due to a booking by ${bookedAgency}`);
+          button.title = `Unavailable due to a booking by ${bookedAgency}`;
         } else {
           button.setAttribute("aria-label", `${formatTime(time)}, available`);
           button.addEventListener("click", () => {
@@ -422,8 +454,10 @@
       const email = document.querySelector("#email").value.trim();
       const notes = document.querySelector("#notes").value.trim();
       const mode = form.querySelector('input[name="mode"]:checked').value;
-      const id = slotId(selectedDate, selectedTime);
-      const slotRef = doc(db, "meetingSlots", id);
+      const bookingDate = selectedDate;
+      const bookingTime = selectedTime;
+      const id = slotId(bookingDate, bookingTime);
+      const conflictingSlotRefs = conflictingSlotTimes(bookingTime).map(time => doc(db, "meetingSlots", slotId(bookingDate, time)));
       const reservationRef = doc(db, "agencyReservations", agencyId);
       const contactRef = doc(db, "bookingContacts", agencyId);
       submitting = true;
@@ -432,21 +466,23 @@
 
       try {
         await runTransaction(db, async transaction => {
-          const [slotSnapshot, reservationSnapshot] = await Promise.all([
-            transaction.get(slotRef),
+          const [slotSnapshots, reservationSnapshot] = await Promise.all([
+            Promise.all(conflictingSlotRefs.map(slotRef => transaction.get(slotRef))),
             transaction.get(reservationRef)
           ]);
-          if (slotSnapshot.exists()) throw new Error("slot-taken");
+          if (slotSnapshots.some(snapshot => snapshot.exists() && bookingsOverlap(bookingTime, snapshot.data()))) {
+            throw new Error("slot-taken");
+          }
           if (reservationSnapshot.exists()) throw new Error("agency-booked");
           const createdAt = Timestamp.now();
-          transaction.set(slotRef, { agencyId, date: selectedDate, time: selectedTime, mode, createdAt });
-          transaction.set(reservationRef, { slotId: id, date: selectedDate, time: selectedTime, mode, createdAt });
+          transaction.set(conflictingSlotRefs[1], { agencyId, date: bookingDate, time: bookingTime, mode, durationMinutes: 60, createdAt });
+          transaction.set(reservationRef, { slotId: id, date: bookingDate, time: bookingTime, mode, durationMinutes: 60, createdAt });
           transaction.set(contactRef, { agencyId, name, email, notes, createdAt });
         });
         agencyAlreadyBooked = true;
         selectedTime = "";
         form.reset();
-        setMessage(`Booking confirmed for ${formatDate(selectedDate)} at ${formatTime(id.split("_")[1])}. A project coordinator will follow up by email.`, "success");
+        setMessage(`Booking confirmed for ${formatDate(bookingDate)} at ${formatTime(bookingTime)}. A project coordinator will follow up by email.`, "success");
       } catch (error) {
         console.error("SAMBIO booking failed:", error);
         if (error.message === "slot-taken") {
