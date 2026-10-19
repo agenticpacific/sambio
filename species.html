@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAMBIO GBIF Species Occurrence Heatmap &mdash; Fiji</title>
+<link rel="icon" href="https://agenticpacific.com.fj/sambio/sambio.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+<style>
+:root{
+  --bg:#f4f6f8; --panel:#ffffff; --ink:#10212b; --muted:#5d7383; --line:#dde5ea;
+  --accent:#0b7285; --accent-soft:#e3f2f5; --marine:#1c7ed6; --terrestrial:#2f9e44;
+  --freshwater:#0ca678; --cross:#868e96; --shadow:0 1px 2px rgba(16,33,43,.06),0 4px 16px rgba(16,33,43,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+a{color:var(--accent)}
+.wrap{max-width:1680px;margin:0 auto;padding:0 20px 56px}
+
+header.top{background:linear-gradient(135deg,#0b7285,#0c5c6b 55%,#11405c);color:#fff;padding:26px 0 22px;margin-bottom:20px}
+header.top .wrap{padding-bottom:0}
+header.top h1{font-size:clamp(24px,3.1vw,34px);line-height:1.15;letter-spacing:-.4px}
+header.top p{margin:6px 0 0;color:#bfe3ea;max-width:900px;font-size:13px;line-height:1.5;min-height:4.5em}
+.brand{display:flex;align-items:flex-start;gap:18px;justify-content:space-between;flex-wrap:wrap;min-height:132px}
+.brand-left{display:flex;align-items:flex-start;gap:18px;min-width:0;flex:1}
+.brand-text{min-width:0;flex:1}
+.logo{
+  flex:none;width:124px;height:auto;border-radius:16px;background:#fff;
+  padding:8px;box-shadow:0 2px 10px rgba(0,0,0,.22)
+}
+.nav-links{
+  display:inline-flex;gap:6px;align-items:center;margin-top:8px;
+  padding:5px;border-radius:999px;background:rgba(7,31,43,.38);
+  border:1px solid rgba(255,255,255,.34);box-shadow:0 4px 16px rgba(0,0,0,.24)
+}
+.nav-links a{
+  color:#fff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.01em;
+  padding:9px 18px;border-radius:999px;background:rgba(255,255,255,.1);
+  border:1.5px solid rgba(255,255,255,.28);transition:all .15s ease;white-space:nowrap
+}
+.nav-links a:hover{
+  background:rgba(255,255,255,.26);border-color:#fff;transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(0,0,0,.2)
+}
+.nav-links a.active{
+  background:#fff;color:#0b5868;border-color:#fff;
+  box-shadow:0 2px 10px rgba(0,0,0,.25)
+}
+@media (max-width:640px){.brand,.brand-left{gap:12px}.logo{width:78px}}
+.meta{margin-top:12px;display:flex;gap:4px 14px;flex-wrap:wrap;font-size:12px;line-height:1.5;min-height:1.5em;color:#9fd2dc}
+.meta b{color:#fff;font-weight:600}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .v{font-size:24px;font-weight:680;letter-spacing:-.02em;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:3px}
+.kpi .s{font-size:11px;color:var(--muted);margin-top:5px}
+
+.toolbar{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.toolbar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;align-items:end}
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.toolbar input[type=search], .toolbar input[type=number], select{
+  width:100%;font:inherit;padding:7px 10px;border:1px solid var(--line);
+  border-radius:7px;font-size:13px;background:#fbfcfd;color:var(--ink)
+}
+.toolbar input:focus, select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.year-bar{
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--line)
+}
+.year-inputs{display:flex;align-items:center;gap:6px}
+.year-inputs input[type=number]{width:86px;text-align:center;font-variant-numeric:tabular-nums}
+.presets{display:flex;gap:5px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:6px 11px;font-size:12.5px}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.active, button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#095e6e;color:#fff}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft);color:#08606f;
+  border:1px solid #bfe0e6;border-radius:999px;padding:3px 7px 3px 11px;font-size:12px}
+.chip b{font-weight:600}
+.chip button{border:0;background:transparent;padding:0 4px;color:#08606f;font-size:15px;line-height:1}
+.chip button:hover{color:#c92a2a}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px;box-shadow:var(--shadow);min-width:0}
+.card h3{font-size:13.5px;display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.card h3 .sub{font-weight:400;color:var(--muted);font-size:11.5px}
+.card .body{margin-top:10px}
+.span4{grid-column:span 4}.span5{grid-column:span 5}.span6{grid-column:span 6}
+.span7{grid-column:span 7}.span8{grid-column:span 8}.span12{grid-column:span 12}
+@media(max-width:1200px){.span4,.span5,.span6,.span7,.span8{grid-column:span 12}}
+
+.map-controls{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  margin-bottom:10px;padding:8px 11px;background:#f8fafb;border:1px solid var(--line);border-radius:8px;font-size:12px
+}
+.map-controls label{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-weight:500}
+.map-controls input[type=range]{width:90px;accent-color:var(--accent)}
+.map-controls select{width:auto;padding:4px 8px;font-size:12px}
+#map{height:600px;border-radius:8px;overflow:hidden;border:1px solid var(--line);position:relative}
+.heat-legend{
+  display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11.5px;color:var(--muted);justify-content:space-between;flex-wrap:wrap
+}
+.ramp-bar{width:180px;height:10px;border-radius:5px;border:1px solid rgba(0,0,0,.12)}
+.kingdom-dots{display:flex;gap:10px;flex-wrap:wrap}
+.kingdom-dots span{display:inline-flex;align-items:center;gap:5px}
+.kingdom-dots i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+.tabs{display:flex;flex-wrap:wrap;gap:4px}
+.tab{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;
+  padding:3px 6px;cursor:pointer;border-bottom:2px solid transparent;border-radius:0}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+svg{display:block;width:100%;overflow:visible}
+.bar{cursor:pointer}
+.bar rect.track{fill:#f0f4f6;rx:3px}
+.bar rect.value{fill:var(--accent);transition:fill .12s;rx:3px}
+.bar:hover rect.value{fill:#0a5f6e}
+.bar.on rect.value{fill:#e8590c}
+.bar text.lab{font-size:11.5px;fill:var(--ink)}
+.bar text.num{font-size:11px;fill:var(--muted);font-variant-numeric:tabular-nums}
+.bar.on text.lab{font-weight:650}
+.axis text{font-size:10.5px;fill:var(--muted)}
+.axis path,.axis line{stroke:#e4ebef}
+.cell{cursor:pointer;transition:opacity .1s}
+.cell:hover{stroke:#10212b;stroke-width:1.5px}
+
+.tip{position:fixed;pointer-events:none;z-index:9999;background:#10212b;color:#fff;padding:7px 10px;
+  border-radius:6px;font-size:12px;opacity:0;transition:opacity .1s;max-width:340px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#boot{
+  max-width:680px;margin:60px auto;padding:24px 28px;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);text-align:center
+}
+.spinner{
+  width:32px;height:32px;border:3px solid var(--line);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap brand">
+    <div class="brand-left">
+      <img class="logo" src="https://agenticpacific.com.fj/sambio/sambio.png"
+           alt="SAMBIO Fiji" width="260" height="280"
+           onerror="this.remove()">
+      <div class="brand-text">
+        <h1 style="margin-top: 10px">SAMBIO Species Occurrence Heatmap</h1>
+        <p>Safeguarding Marine &amp; Terrestrial Biodiversity in Fiji. Interactive spatial density and temporal
+           distribution of Global Biodiversity Information Facility (GBIF) occurrence records across Fijian
+           marine and terrestrial ecosystems, filterable by taxonomic classification, basis of record and year.</p>
+        <div class="meta" id="hdr-meta"><span>Loading occurrence dataset&hellip;</span></div>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">Data Stocktake</a>
+      <a href="species.html" class="active">Species Heatmap</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="boot">
+    <div class="spinner"></div>
+    <strong>Loading <code>fj-gbif.geojson</code>&hellip;</strong>
+    <div style="color:var(--muted);font-size:12.5px;margin-top:6px">Parsing georeferenced Fiji species occurrences for WebGL heatmap rendering.</div>
+  </div>
+
+  <div id="app" hidden>
+    <section class="kpis">
+      <div class="kpi">
+        <div class="v" id="kpi-total">&mdash;</div>
+        <div class="l">Total GBIF Records</div>
+        <div class="s" id="kpi-total-sub">Harvested in fj-gbif.pkl</div>
+      </div>
+      <div class="kpi">
+        <div class="v" id="kpi-mapped">&mdash;</div>
+        <div class="l">Georeferenced in Fiji</div>
+        <div class="s" id="kpi-mapped-sub">With valid coordinates</div>
+      </div>
+      <div class="kpi">
+        <div class="v" id="kpi-filtered">&mdash;</div>
+        <div class="l">Filtered Occurrences</div>
+        <div class="s" id="kpi-filtered-sub">100% of mapped records</div>
+      </div>
+      <div class="kpi">
+        <div class="v" id="kpi-species">&mdash;</div>
+        <div class="l">Distinct Species</div>
+        <div class="s" id="kpi-species-sub">In active selection</div>
+      </div>
+      <div class="kpi">
+        <div class="v" id="kpi-families">&mdash;</div>
+        <div class="l">Families &middot; Classes</div>
+        <div class="s" id="kpi-families-sub">Taxonomic breadth</div>
+      </div>
+      <div class="kpi">
+        <div class="v" id="kpi-years">&mdash;</div>
+        <div class="l">Year Range</div>
+        <div class="s" id="kpi-years-sub">Observation span</div>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <div class="toolbar-grid">
+        <div class="field-group" style="grid-column:span 2">
+          <label for="q">Search Taxon / Species</label>
+          <input type="search" id="q" placeholder="e.g. Aves, Formicidae, Foulehaio, Acropora, Carcharhinus…">
+        </div>
+        <div class="field-group">
+          <label for="sel-kingdom">Kingdom</label>
+          <select id="sel-kingdom"><option value="">All kingdoms</option></select>
+        </div>
+        <div class="field-group">
+          <label for="sel-phylum">Phylum</label>
+          <select id="sel-phylum"><option value="">All phyla</option></select>
+        </div>
+        <div class="field-group">
+          <label for="sel-class">Class</label>
+          <select id="sel-class"><option value="">All classes</option></select>
+        </div>
+        <div class="field-group">
+          <label for="sel-order">Order</label>
+          <select id="sel-order"><option value="">All orders</option></select>
+        </div>
+        <div class="field-group">
+          <label for="sel-family">Family</label>
+          <select id="sel-family"><option value="">All families</option></select>
+        </div>
+        <div class="field-group">
+          <label for="sel-basis">Basis of Record</label>
+          <select id="sel-basis"><option value="">All record types</option></select>
+        </div>
+      </div>
+
+      <div class="year-bar">
+        <strong style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Year Filter:</strong>
+        <div class="year-inputs">
+          <input type="number" id="year-min" min="1800" max="2026" placeholder="Min">
+          <span style="color:var(--muted)">to</span>
+          <input type="number" id="year-max" min="1800" max="2026" placeholder="Max">
+        </div>
+        <div class="presets">
+          <button type="button" data-preset="all" class="preset-btn active">All Years</button>
+          <button type="button" data-preset="pre2000" class="preset-btn">&le; 1999</button>
+          <button type="button" data-preset="2000-2014" class="preset-btn">2000&ndash;2014</button>
+          <button type="button" data-preset="2015-2026" class="preset-btn">2015&ndash;2026</button>
+          <button type="button" data-preset="2020-2026" class="preset-btn">2020&ndash;2026</button>
+        </div>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);cursor:pointer">
+          <input type="checkbox" id="include-undated" checked>
+          Include undated records
+        </label>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button type="button" id="reset-btn" class="primary">Reset All Filters</button>
+        </div>
+      </div>
+
+      <div class="chips" id="active-chips"></div>
+    </section>
+
+    <div class="grid">
+      <div class="card span8">
+        <h3>
+          <span>Spatial Occurrence Heatmap <span class="sub" id="map-sub">Fiji maritime &amp; terrestrial zone</span></span>
+          <button type="button" id="fit-fiji" style="padding:4px 9px;font-size:11.5px">Fit to Fiji</button>
+        </h3>
+        <div class="body">
+          <div class="map-controls">
+            <label>
+              Weighting
+              <select id="heat-weight">
+                <option value="log" selected>Logarithmic count (balanced)</option>
+                <option value="linear">Linear occurrence count</option>
+                <option value="unit">Equal weight per location-taxon</option>
+              </select>
+            </label>
+            <label>
+              Color Ramp
+              <select id="heat-ramp">
+                <option value="thermal" selected>Thermal (Blue &rarr; Red)</option>
+                <option value="viridis">Viridis (Purple &rarr; Yellow)</option>
+                <option value="emerald">Emerald (Teal &rarr; Lime)</option>
+                <option value="magma">Magma (Indigo &rarr; Flame)</option>
+              </select>
+            </label>
+            <label>
+              Radius
+              <input type="range" id="heat-radius" min="4" max="36" value="15">
+            </label>
+            <label>
+              Intensity
+              <input type="range" id="heat-intensity" min="2" max="30" value="10">
+            </label>
+            <label style="cursor:pointer">
+              <input type="checkbox" id="toggle-pa" checked>
+              Protected Areas overlay
+            </label>
+          </div>
+          <div id="map"></div>
+          <div class="heat-legend">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>Low density</span>
+              <div class="ramp-bar" id="ramp-preview"></div>
+              <span>High density</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card span4">
+        <h3>
+          <span>Species Classifications</span>
+          <div class="tabs" id="rank-tabs">
+            <button type="button" class="tab active" data-rank="class">Class</button>
+            <button type="button" class="tab" data-rank="order">Order</button>
+            <button type="button" class="tab" data-rank="family">Family</button>
+            <button type="button" class="tab" data-rank="phylum">Phylum</button>
+            <button type="button" class="tab" data-rank="kingdom">Kingdom</button>
+            <button type="button" class="tab" data-rank="genus">Genus</button>
+          </div>
+        </h3>
+        <div class="body">
+          <div id="rank-chart"></div>
+        </div>
+      </div>
+
+      <div class="card span7">
+        <h3>
+          <span>Occurrences by Year <span class="sub" id="year-chart-sub">Click any year bar to filter</span></span>
+          <div class="tabs" id="year-scale-tabs">
+            <button type="button" class="tab active" data-scale="linear">Linear</button>
+            <button type="button" class="tab" data-scale="sqrt">Sqrt Scale</button>
+          </div>
+        </h3>
+        <div class="body">
+          <div id="year-chart"></div>
+        </div>
+      </div>
+
+      <div class="card span5">
+        <h3>
+          <span>Top Recorded Species <span class="sub">Click a species to isolate on map</span></span>
+        </h3>
+        <div class="body">
+          <div id="species-chart"></div>
+        </div>
+      </div>
+
+      <div class="card span12">
+        <h3>
+          <span>Classification &times; Year Heatmap Matrix <span class="sub">Click any cell to filter by classification &amp; period</span></span>
+          <div class="tabs" id="matrix-rank-tabs">
+            <button type="button" class="tab active" data-mrank="class">By Class</button>
+            <button type="button" class="tab" data-mrank="order">By Order</button>
+            <button type="button" class="tab" data-mrank="family">By Family</button>
+            <button type="button" class="tab" data-mrank="kingdom">By Kingdom</button>
+          </div>
+        </h3>
+        <div class="body">
+          <div id="matrix-chart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+<script>
+const FIJI_BOUNDS = [[176.6, -21.2], [181.6, -12.2]];
+const RANKS = ["kingdom", "phylum", "class", "order", "family", "genus", "species"];
+const RANK_LABELS = {
+  kingdom: "Kingdom", phylum: "Phylum", class: "Class",
+  order: "Order", family: "Family", genus: "Genus", species: "Species"
+};
+
+const KINGDOM_COLOR = {
+  Animalia: "#1c7ed6",
+  Plantae: "#2f9e44",
+  Bacteria: "#f59f00",
+  Fungi: "#ae3ec9",
+  Chromista: "#0ca678",
+  Archaea: "#e8590c",
+  Protozoa: "#f06595",
+  Unclassified: "#868e96"
+};
+
+const COLOR_RAMPS = {
+  thermal: {
+    css: "linear-gradient(90deg, rgba(11,114,133,0.15), #1c7ed6, #0ca678, #f59f00, #e8590c, #c92a2a)",
+    stops: [
+      0, "rgba(11,114,133,0)",
+      0.12, "rgba(28,126,214,0.55)",
+      0.32, "rgba(12,166,120,0.75)",
+      0.58, "rgba(245,159,0,0.86)",
+      0.82, "rgba(232,89,12,0.93)",
+      1, "rgba(201,42,42,0.98)"
+    ]
+  },
+  viridis: {
+    css: "linear-gradient(90deg, rgba(68,1,84,0.15), #3b528b, #21918c, #5ec962, #fde725)",
+    stops: [
+      0, "rgba(68,1,84,0)",
+      0.15, "rgba(68,1,84,0.6)",
+      0.38, "rgba(59,82,139,0.78)",
+      0.62, "rgba(33,145,140,0.88)",
+      0.84, "rgba(94,201,98,0.94)",
+      1, "rgba(253,231,37,0.98)"
+    ]
+  },
+  emerald: {
+    css: "linear-gradient(90deg, rgba(8,127,91,0.12), #0ca678, #2f9e44, #94d82d, #ffe066)",
+    stops: [
+      0, "rgba(8,127,91,0)",
+      0.15, "rgba(12,166,120,0.55)",
+      0.4, "rgba(47,158,68,0.78)",
+      0.7, "rgba(148,216,45,0.9)",
+      1, "rgba(255,224,102,0.98)"
+    ]
+  },
+  magma: {
+    css: "linear-gradient(90deg, rgba(20,14,54,0.15), #51127c, #b73779, #fb8861, #fcfdbf)",
+    stops: [
+      0, "rgba(20,14,54,0)",
+      0.15, "rgba(81,18,124,0.6)",
+      0.42, "rgba(183,55,121,0.8)",
+      0.72, "rgba(251,136,97,0.92)",
+      1, "rgba(252,253,191,0.98)"
+    ]
+  }
+};
+
+const fmt = d3.format(",");
+const tip = document.getElementById("tip");
+
+const state = {
+  raw: null,
+  features: [],
+  filtered: [],
+  pa: null,
+  map: null,
+  mapReady: false,
+  activeRank: "class",
+  matrixRank: "class",
+  yearScale: "linear",
+  filters: {
+    q: "",
+    kingdom: "",
+    phylum: "",
+    class: "",
+    order: "",
+    family: "",
+    genus: "",
+    species: "",
+    basisOfRecord: "",
+    yearMin: null,
+    yearMax: null,
+    includeUndated: true
+  },
+  globalYearMin: 1900,
+  globalYearMax: 2026
+};
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function showTip(ev, html) {
+  tip.innerHTML = html;
+  tip.style.opacity = 1;
+  moveTip(ev);
+}
+
+function moveTip(ev) {
+  const pad = 14;
+  const x = Math.min(window.innerWidth - tip.offsetWidth - pad, ev.clientX + pad);
+  const y = Math.min(window.innerHeight - tip.offsetHeight - pad, ev.clientY + pad);
+  tip.style.left = `${Math.max(pad, x)}px`;
+  tip.style.top = `${Math.max(pad, y)}px`;
+}
+
+function hideTip() {
+  tip.style.opacity = 0;
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
+}
+
+Promise.allSettled([
+  d3.json("fj-gbif.geojson"),
+  d3.json("fj-pa-master.geojson")
+]).then(([gbifRes, paRes]) => {
+  if (gbifRes.status !== "fulfilled" || !gbifRes.value) {
+    throw gbifRes.reason || new Error("Failed to load fj-gbif.geojson");
+  }
+  state.raw = gbifRes.value;
+  state.features = gbifRes.value.features || [];
+  state.pa = paRes.status === "fulfilled" && paRes.value ? paRes.value : { type: "FeatureCollection", features: [] };
+
+  // Precompute search string on each feature for fast interactive filtering
+  let minY = Infinity, maxY = -Infinity;
+  for (const f of state.features) {
+    const p = f.properties;
+    p._search = `${p.species} ${p.genus} ${p.family} ${p.order} ${p.class} ${p.phylum} ${p.kingdom}`.toLowerCase();
+    if (p.year != null) {
+      if (p.year < minY) minY = p.year;
+      if (p.year > maxY) maxY = p.year;
+    }
+  }
+  if (Number.isFinite(minY)) state.globalYearMin = minY;
+  if (Number.isFinite(maxY)) state.globalYearMax = maxY;
+
+  document.getElementById("year-min").placeholder = state.globalYearMin;
+  document.getElementById("year-max").placeholder = state.globalYearMax;
+
+  document.getElementById("boot").hidden = true;
+  document.getElementById("app").hidden = false;
+  init();
+}).catch(err => {
+  console.error(err);
+  document.getElementById("boot").innerHTML =
+    `<strong>Could not load <code>fj-gbif.geojson</code>.</strong><br>${esc(err.message || err)}<br><br>` +
+    `Run <code>uv run python fj-gbif-geojson.py</code> and serve over HTTP:<br>` +
+    `<code>python -m http.server 8000</code> &rarr; <a href="http://localhost:8000/species.html">http://localhost:8000/species.html</a>`;
+});
+
+function init() {
+  const d = state.raw;
+  document.getElementById("hdr-meta").innerHTML = [
+    `<span>Harvested <b>${fmt(d.total_records || 0)}</b> Records</span>`,
+    `<span>Mapped <b>${fmt(d.fiji_mapped_records || 0)}</b> Occurrences Across <b>${fmt(d.unique_species || 0)}</b> Species</span>`
+  ].join("");
+
+  document.getElementById("kpi-total").textContent = fmt(d.total_records || 0);
+  document.getElementById("kpi-mapped").textContent = fmt(d.fiji_mapped_records || 0);
+  document.getElementById("kpi-mapped-sub").textContent =
+    `${((d.fiji_mapped_records || 0) / Math.max(1, d.total_records || 1) * 100).toFixed(1)}% georeferenced in Fiji (${fmt(state.features.length)} points)`;
+
+  updateRampPreview();
+  initMap();
+  bindControls();
+  applyFilters();
+}
+
+function updateRampPreview() {
+  const rampKey = document.getElementById("heat-ramp").value;
+  const ramp = COLOR_RAMPS[rampKey] || COLOR_RAMPS.thermal;
+  document.getElementById("ramp-preview").style.background = ramp.css;
+}
+
+function bindControls() {
+  document.getElementById("q").addEventListener("input", debounce(e => {
+    state.filters.q = e.target.value.trim().toLowerCase();
+    applyFilters();
+  }, 150));
+
+  const selectMap = {
+    "sel-kingdom": "kingdom",
+    "sel-phylum": "phylum",
+    "sel-class": "class",
+    "sel-order": "order",
+    "sel-family": "family",
+    "sel-basis": "basisOfRecord"
+  };
+
+  Object.entries(selectMap).forEach(([id, key]) => {
+    document.getElementById(id).addEventListener("change", e => {
+      state.filters[key] = e.target.value;
+      // Clear child taxonomic filters if parent rank changed
+      const rankIdx = RANKS.indexOf(key);
+      if (rankIdx >= 0) {
+        for (let i = rankIdx + 1; i < RANKS.length; i++) {
+          state.filters[RANKS[i]] = "";
+        }
+      }
+      applyFilters();
+    });
+  });
+
+  const onYearInput = debounce(() => {
+    const minVal = document.getElementById("year-min").value;
+    const maxVal = document.getElementById("year-max").value;
+    state.filters.yearMin = minVal !== "" ? parseInt(minVal, 10) : null;
+    state.filters.yearMax = maxVal !== "" ? parseInt(maxVal, 10) : null;
+    syncPresetButtons();
+    applyFilters();
+  }, 150);
+
+  document.getElementById("year-min").addEventListener("input", onYearInput);
+  document.getElementById("year-max").addEventListener("input", onYearInput);
+
+  document.querySelectorAll(".preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const p = btn.dataset.preset;
+      if (p === "all") {
+        state.filters.yearMin = null;
+        state.filters.yearMax = null;
+      } else if (p === "pre2000") {
+        state.filters.yearMin = null;
+        state.filters.yearMax = 1999;
+      } else if (p === "2000-2014") {
+        state.filters.yearMin = 2000;
+        state.filters.yearMax = 2014;
+      } else if (p === "2015-2026") {
+        state.filters.yearMin = 2015;
+        state.filters.yearMax = 2026;
+      } else if (p === "2020-2026") {
+        state.filters.yearMin = 2020;
+        state.filters.yearMax = 2026;
+      }
+      document.getElementById("year-min").value = state.filters.yearMin ?? "";
+      document.getElementById("year-max").value = state.filters.yearMax ?? "";
+      syncPresetButtons();
+      applyFilters();
+    });
+  });
+
+  document.getElementById("include-undated").addEventListener("change", e => {
+    state.filters.includeUndated = e.target.checked;
+    applyFilters();
+  });
+
+  document.getElementById("reset-btn").addEventListener("click", () => {
+    state.filters = {
+      q: "", kingdom: "", phylum: "", class: "", order: "", family: "",
+      genus: "", species: "", basisOfRecord: "",
+      yearMin: null, yearMax: null, includeUndated: true
+    };
+    document.getElementById("q").value = "";
+    document.getElementById("year-min").value = "";
+    document.getElementById("year-max").value = "";
+    document.getElementById("include-undated").checked = true;
+    syncPresetButtons();
+    applyFilters();
+  });
+
+  document.querySelectorAll("#rank-tabs .tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#rank-tabs .tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      state.activeRank = tab.dataset.rank;
+      drawRankChart();
+    });
+  });
+
+  document.querySelectorAll("#year-scale-tabs .tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#year-scale-tabs .tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      state.yearScale = tab.dataset.scale;
+      drawYearChart();
+    });
+  });
+
+  document.querySelectorAll("#matrix-rank-tabs .tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#matrix-rank-tabs .tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      state.matrixRank = tab.dataset.mrank;
+      drawMatrixChart();
+    });
+  });
+
+  // Map appearance controls
+  ["heat-weight", "heat-ramp", "heat-radius", "heat-intensity"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      updateRampPreview();
+      updateHeatmapStyle();
+    });
+  });
+
+  document.getElementById("toggle-pa").addEventListener("change", e => {
+    if (!state.mapReady) return;
+    const vis = e.target.checked ? "visible" : "none";
+    if (state.map.getLayer("pa-fill")) state.map.setLayoutProperty("pa-fill", "visibility", vis);
+    if (state.map.getLayer("pa-line")) state.map.setLayoutProperty("pa-line", "visibility", vis);
+  });
+
+  document.getElementById("fit-fiji").addEventListener("click", () => {
+    if (state.map) state.map.fitBounds(FIJI_BOUNDS, { padding: 24 });
+  });
+
+  window.addEventListener("resize", debounce(() => {
+    drawRankChart();
+    drawYearChart();
+    drawSpeciesChart();
+    drawMatrixChart();
+  }, 180));
+}
+
+function syncPresetButtons() {
+  const { yearMin, yearMax } = state.filters;
+  let active = "";
+  if (yearMin == null && yearMax == null) active = "all";
+  else if (yearMin == null && yearMax === 1999) active = "pre2000";
+  else if (yearMin === 2000 && yearMax === 2014) active = "2000-2014";
+  else if (yearMin === 2015 && yearMax === 2026) active = "2015-2026";
+  else if (yearMin === 2020 && yearMax === 2026) active = "2020-2026";
+  document.querySelectorAll(".preset-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.preset === active);
+  });
+}
+
+function matchesFilters(p, ignoreKey = null) {
+  const f = state.filters;
+  if (ignoreKey !== "kingdom" && f.kingdom && p.kingdom !== f.kingdom) return false;
+  if (ignoreKey !== "phylum" && f.phylum && p.phylum !== f.phylum) return false;
+  if (ignoreKey !== "class" && f.class && p.class !== f.class) return false;
+  if (ignoreKey !== "order" && f.order && p.order !== f.order) return false;
+  if (ignoreKey !== "family" && f.family && p.family !== f.family) return false;
+  if (ignoreKey !== "genus" && f.genus && p.genus !== f.genus) return false;
+  if (ignoreKey !== "species" && f.species && p.species !== f.species) return false;
+  if (ignoreKey !== "basisOfRecord" && f.basisOfRecord && p.basisOfRecord !== f.basisOfRecord) return false;
+
+  if (ignoreKey !== "year") {
+    if (p.year == null) {
+      if (!f.includeUndated) return false;
+      if (f.yearMin != null || f.yearMax != null) return false;
+    } else {
+      if (f.yearMin != null && p.year < f.yearMin) return false;
+      if (f.yearMax != null && p.year > f.yearMax) return false;
+    }
+  }
+
+  if (f.q) {
+    const terms = f.q.split(/\s+/);
+    for (let i = 0; i < terms.length; i++) {
+      if (!p._search.includes(terms[i])) return false;
+    }
+  }
+  return true;
+}
+
+function applyFilters() {
+  state.filtered = state.features.filter(f => matchesFilters(f.properties));
+  populateDropdowns();
+  renderChips();
+  updateKPIs();
+  updateMapData();
+  drawRankChart();
+  drawYearChart();
+  drawSpeciesChart();
+  drawMatrixChart();
+}
+
+function populateDropdowns() {
+  const dropdownSpecs = [
+    { id: "sel-kingdom", key: "kingdom", label: "All kingdoms" },
+    { id: "sel-phylum", key: "phylum", label: "All phyla" },
+    { id: "sel-class", key: "class", label: "All classes" },
+    { id: "sel-order", key: "order", label: "All orders" },
+    { id: "sel-family", key: "family", label: "All families" },
+    { id: "sel-basis", key: "basisOfRecord", label: "All record types" }
+  ];
+
+  dropdownSpecs.forEach(({ id, key, label }) => {
+    const counts = new Map();
+    for (const f of state.features) {
+      const p = f.properties;
+      if (!matchesFilters(p, key)) continue;
+      const val = p[key] || "Unclassified";
+      counts.set(val, (counts.get(val) || 0) + p.count);
+    }
+    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const sel = document.getElementById(id);
+    const current = state.filters[key] || "";
+    const capped = sorted.slice(0, 250);
+    if (current && !capped.some(([k]) => k === current)) {
+      capped.unshift([current, counts.get(current) || 0]);
+    }
+    sel.innerHTML = `<option value="">${label} (${fmt(sorted.length)})</option>` +
+      capped.map(([k, c]) => `<option value="${esc(k)}"${k === current ? " selected" : ""}>${esc(k)} (${fmt(c)})</option>`).join("");
+  });
+}
+
+function renderChips() {
+  const f = state.filters;
+  const chips = [];
+  if (f.q) chips.push({ label: "Search", value: f.q, clear: () => { f.q = ""; document.getElementById("q").value = ""; } });
+  RANKS.forEach(r => {
+    if (f[r]) chips.push({ label: RANK_LABELS[r], value: f[r], clear: () => { f[r] = ""; } });
+  });
+  if (f.basisOfRecord) {
+    chips.push({ label: "Basis", value: f.basisOfRecord, clear: () => { f.basisOfRecord = ""; } });
+  }
+  if (f.yearMin != null || f.yearMax != null) {
+    const yLabel = `${f.yearMin ?? state.globalYearMin}–${f.yearMax ?? state.globalYearMax}`;
+    chips.push({
+      label: "Year",
+      value: yLabel,
+      clear: () => {
+        f.yearMin = null;
+        f.yearMax = null;
+        document.getElementById("year-min").value = "";
+        document.getElementById("year-max").value = "";
+        syncPresetButtons();
+      }
+    });
+  }
+  if (!f.includeUndated && f.yearMin == null && f.yearMax == null) {
+    chips.push({
+      label: "Dates",
+      value: "Dated only",
+      clear: () => {
+        f.includeUndated = true;
+        document.getElementById("include-undated").checked = true;
+      }
+    });
+  }
+
+  const wrap = document.getElementById("active-chips");
+  wrap.innerHTML = "";
+  chips.forEach(c => {
+    const el = document.createElement("span");
+    el.className = "chip";
+    el.innerHTML = `<span>${esc(c.label)}: <b>${esc(c.value)}</b></span><button type="button" title="Remove filter">&times;</button>`;
+    el.querySelector("button").addEventListener("click", () => {
+      c.clear();
+      applyFilters();
+    });
+    wrap.appendChild(el);
+  });
+}
+
+function updateKPIs() {
+  let occCount = 0;
+  const speciesSet = new Set();
+  const familySet = new Set();
+  const classSet = new Set();
+  let minY = Infinity, maxY = -Infinity, datedCount = 0;
+
+  for (const f of state.filtered) {
+    const p = f.properties;
+    occCount += p.count;
+    if (p.species && p.species !== "Unclassified") speciesSet.add(p.species);
+    if (p.family && p.family !== "Unclassified") familySet.add(p.family);
+    if (p.class && p.class !== "Unclassified") classSet.add(p.class);
+    if (p.year != null) {
+      datedCount += p.count;
+      if (p.year < minY) minY = p.year;
+      if (p.year > maxY) maxY = p.year;
+    }
+  }
+
+  const mappedTotal = state.raw.fiji_mapped_records || 1;
+  document.getElementById("kpi-filtered").textContent = fmt(occCount);
+  document.getElementById("kpi-filtered-sub").textContent =
+    `${(occCount / mappedTotal * 100).toFixed(1)}% of mapped (${fmt(state.filtered.length)} point clusters)`;
+
+  document.getElementById("kpi-species").textContent = fmt(speciesSet.size);
+  document.getElementById("kpi-families").textContent = `${fmt(familySet.size)} · ${fmt(classSet.size)}`;
+  document.getElementById("kpi-families-sub").textContent = `${fmt(familySet.size)} families across ${fmt(classSet.size)} classes`;
+
+  if (Number.isFinite(minY)) {
+    document.getElementById("kpi-years").textContent = minY === maxY ? `${minY}` : `${minY}–${maxY}`;
+    document.getElementById("kpi-years-sub").textContent = `${fmt(datedCount)} dated occurrences`;
+  } else {
+    document.getElementById("kpi-years").textContent = "—";
+    document.getElementById("kpi-years-sub").textContent = "No dated records in selection";
+  }
+
+  document.getElementById("map-sub").textContent =
+    `${fmt(occCount)} occurrences across ${fmt(state.filtered.length)} Fiji locations`;
+}
+
+/* --------------------------------------------------------------------- MapLibre Heatmap */
+
+function buildHeatmapWeightExpr() {
+  const mode = document.getElementById("heat-weight").value;
+  if (mode === "unit") return 1;
+  if (mode === "linear") {
+    return ["interpolate", ["linear"], ["get", "count"], 1, 0.25, 25, 1, 250, 4, 2000, 10];
+  }
+  // Logarithmic scaling (default): balances 1-record specimens with dense survey sites
+  return ["+", 1, ["ln", ["max", 1, ["get", "count"]]]];
+}
+
+function buildHeatmapColorExpr() {
+  const rampKey = document.getElementById("heat-ramp").value;
+  const ramp = COLOR_RAMPS[rampKey] || COLOR_RAMPS.thermal;
+  return ["interpolate", ["linear"], ["heatmap-density"], ...ramp.stops];
+}
+
+function initMap() {
+  const style = {
+    version: 8,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    sources: {
+      demo: {
+        type: "vector",
+        url: "https://demotiles.maplibre.org/tiles/tiles.json",
+        attribution: '&copy; <a href="https://maplibre.org/">MapLibre</a> &middot; Data: <a href="https://www.gbif.org/country/FJ/summary" target="_blank" rel="noopener">GBIF</a>'
+      }
+    },
+    layers: [
+      { id: "bg", type: "background", paint: { "background-color": "#d8e6ee" } },
+      {
+        id: "demo-land",
+        type: "fill",
+        source: "demo",
+        "source-layer": "countries",
+        paint: { "fill-color": "#eef3f0", "fill-outline-color": "#b7cad4" }
+      }
+    ]
+  };
+
+  const map = new maplibregl.Map({
+    container: "map",
+    style,
+    bounds: FIJI_BOUNDS,
+    fitBoundsOptions: { padding: 24 },
+    attributionControl: { compact: true }
+  });
+  state.map = map;
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 110, unit: "metric" }));
+
+  map.on("load", () => {
+    if (state.pa && state.pa.features && state.pa.features.length) {
+      map.addSource("pa", { type: "geojson", data: state.pa });
+      map.addLayer({
+        id: "pa-fill",
+        type: "fill",
+        source: "pa",
+        paint: { "fill-color": "#0b7285", "fill-opacity": 0.1 }
+      });
+      map.addLayer({
+        id: "pa-line",
+        type: "line",
+        source: "pa",
+        paint: { "line-color": "#0b7285", "line-width": 1, "line-opacity": 0.45 }
+      });
+    }
+
+    map.addSource("gbif", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: state.filtered }
+    });
+
+    const radius = +document.getElementById("heat-radius").value;
+    const intensity = +document.getElementById("heat-intensity").value / 10;
+
+    map.addLayer({
+      id: "gbif-heat",
+      type: "heatmap",
+      source: "gbif",
+      paint: {
+        "heatmap-weight": buildHeatmapWeightExpr(),
+        "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 4, intensity * 0.7, 9, intensity * 1.4, 13, intensity * 2.2],
+        "heatmap-color": buildHeatmapColorExpr(),
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 4, Math.max(2, radius * 0.45), 8, radius, 12, radius * 1.8],
+        "heatmap-opacity": 0.88
+      }
+    });
+
+    state.mapReady = true;
+  });
+}
+
+function updateHeatmapStyle() {
+  if (!state.mapReady) return;
+  const radius = +document.getElementById("heat-radius").value;
+  const intensity = +document.getElementById("heat-intensity").value / 10;
+  state.map.setPaintProperty("gbif-heat", "heatmap-weight", buildHeatmapWeightExpr());
+  state.map.setPaintProperty("gbif-heat", "heatmap-color", buildHeatmapColorExpr());
+  state.map.setPaintProperty("gbif-heat", "heatmap-radius", [
+    "interpolate", ["linear"], ["zoom"], 4, Math.max(2, radius * 0.45), 8, radius, 12, radius * 1.8
+  ]);
+  state.map.setPaintProperty("gbif-heat", "heatmap-intensity", [
+    "interpolate", ["linear"], ["zoom"], 4, intensity * 0.7, 9, intensity * 1.4, 13, intensity * 2.2
+  ]);
+}
+
+function updateMapData() {
+  if (!state.mapReady) return;
+  const src = state.map.getSource("gbif");
+  if (src) {
+    src.setData({ type: "FeatureCollection", features: state.filtered });
+  }
+}
+
+/* --------------------------------------------------------------------- D3 Charts */
+
+function drawHorizontalBarChart(containerId, items, activeValue, onClick) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  if (!items.length) {
+    container.innerHTML = `<div style="padding:18px;color:var(--muted);font-size:12.5px">No matching occurrences for current filters.</div>`;
+    return;
+  }
+
+  const width = container.clientWidth || 380;
+  const rowH = 24;
+  const height = items.length * rowH + 6;
+  const labelW = Math.min(165, Math.max(115, Math.round(width * 0.42)));
+  const countW = 68;
+  const barW = Math.max(60, width - labelW - countW - 12);
+  const maxVal = d3.max(items, d => d.count) || 1;
+  const x = d3.scaleLinear().domain([0, maxVal]).range([0, barW]);
+
+  const svg = d3.select(container).append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("height", height);
+
+  const g = svg.selectAll("g.bar")
+    .data(items)
+    .join("g")
+    .attr("class", d => `bar${activeValue === d.name ? " on" : ""}`)
+    .attr("transform", (_, i) => `translate(0, ${i * rowH + 2})`)
+    .on("click", (_, d) => onClick(d.name))
+    .on("mousemove", (ev, d) => {
+      showTip(ev, `<b>${esc(d.name)}</b><br>${fmt(d.count)} occurrences (${d.pct.toFixed(1)}%)<br><span style="color:#9fd2dc">Click to filter</span>`);
+    })
+    .on("mouseleave", hideTip);
+
+  g.append("text")
+    .attr("class", "lab")
+    .attr("x", 0)
+    .attr("y", 15)
+    .text(d => d.name.length > 23 ? d.name.slice(0, 22) + "…" : d.name);
+
+  g.append("rect")
+    .attr("class", "track")
+    .attr("x", labelW)
+    .attr("y", 4)
+    .attr("width", barW)
+    .attr("height", 14);
+
+  g.append("rect")
+    .attr("class", "value")
+    .attr("x", labelW)
+    .attr("y", 4)
+    .attr("width", d => Math.max(2, x(d.count)))
+    .attr("height", 14);
+
+  g.append("text")
+    .attr("class", "num")
+    .attr("x", width - 2)
+    .attr("y", 15)
+    .attr("text-anchor", "end")
+    .text(d => fmt(d.count));
+}
+
+function drawRankChart() {
+  const rank = state.activeRank;
+  const counts = new Map();
+  let total = 0;
+  for (const f of state.filtered) {
+    const p = f.properties;
+    const key = p[rank] || "Unclassified";
+    counts.set(key, (counts.get(key) || 0) + p.count);
+    total += p.count;
+  }
+  const items = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 22)
+    .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }));
+
+  drawHorizontalBarChart("rank-chart", items, state.filters[rank], name => {
+    state.filters[rank] = state.filters[rank] === name ? "" : name;
+    applyFilters();
+  });
+}
+
+function drawSpeciesChart() {
+  const counts = new Map();
+  let total = 0;
+  for (const f of state.filtered) {
+    const p = f.properties;
+    total += p.count;
+    if (!p.species || p.species === "Unclassified") continue;
+    counts.set(p.species, (counts.get(p.species) || 0) + p.count);
+  }
+  const items = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .map(([name, count]) => ({ name, count, pct: total ? (count / total) * 100 : 0 }));
+
+  drawHorizontalBarChart("species-chart", items, state.filters.species, name => {
+    state.filters.species = state.filters.species === name ? "" : name;
+    applyFilters();
+  });
+}
+
+function drawYearChart() {
+  const container = document.getElementById("year-chart");
+  container.innerHTML = "";
+
+  const counts = new Map();
+  let undated = 0;
+  for (const f of state.filtered) {
+    const p = f.properties;
+    if (p.year == null) {
+      undated += p.count;
+    } else if (p.year >= 1900 && p.year <= 2026) {
+      counts.set(p.year, (counts.get(p.year) || 0) + p.count);
+    }
+  }
+
+  document.getElementById("year-chart-sub").textContent =
+    `1900–2026 (${fmt(undated)} undated occurrences) · click bar to filter year`;
+
+  const years = d3.range(1900, 2027).map(y => ({ year: y, count: counts.get(y) || 0 }));
+  const width = container.clientWidth || 640;
+  const height = 290;
+  const margin = { top: 12, right: 14, bottom: 28, left: 54 };
+  const innerW = Math.max(200, width - margin.left - margin.right);
+  const innerH = height - margin.top - margin.bottom;
+
+  const x = d3.scaleBand()
+    .domain(years.map(d => d.year))
+    .range([0, innerW])
+    .padding(0.16);
+
+  const maxY = d3.max(years, d => d.count) || 1;
+  const y = (state.yearScale === "sqrt" ? d3.scaleSqrt() : d3.scaleLinear())
+    .domain([0, maxY])
+    .nice()
+    .range([innerH, 0]);
+
+  const svg = d3.select(container).append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("height", height);
+
+  const g = svg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  g.append("g")
+    .attr("class", "axis")
+    .call(d3.axisLeft(y).ticks(6, "~s"));
+
+  g.append("g")
+    .attr("class", "axis")
+    .attr("transform", `translate(0,${innerH})`)
+    .call(
+      d3.axisBottom(x)
+        .tickValues(years.map(d => d.year).filter(yr => yr % 10 === 0 || yr === 2026))
+    );
+
+  const selectedSingleYear =
+    state.filters.yearMin != null && state.filters.yearMin === state.filters.yearMax
+      ? state.filters.yearMin
+      : null;
+
+  g.selectAll("rect.ybar")
+    .data(years)
+    .join("rect")
+    .attr("class", "ybar")
+    .attr("x", d => x(d.year))
+    .attr("y", d => d.count > 0 ? Math.min(innerH - 2, y(d.count)) : innerH)
+    .attr("width", x.bandwidth())
+    .attr("height", d => d.count > 0 ? Math.max(2, innerH - y(d.count)) : 0)
+    .attr("fill", d => selectedSingleYear === d.year ? "#e8590c" : "var(--accent)")
+    .style("cursor", "pointer")
+    .on("mousemove", (ev, d) => {
+      showTip(ev, `<b>Year ${d.year}</b><br>${fmt(d.count)} occurrences<br><span style="color:#9fd2dc">Click to filter to ${d.year}</span>`);
+    })
+    .on("mouseleave", hideTip)
+    .on("click", (_, d) => {
+      if (selectedSingleYear === d.year) {
+        state.filters.yearMin = null;
+        state.filters.yearMax = null;
+      } else {
+        state.filters.yearMin = d.year;
+        state.filters.yearMax = d.year;
+      }
+      document.getElementById("year-min").value = state.filters.yearMin ?? "";
+      document.getElementById("year-max").value = state.filters.yearMax ?? "";
+      syncPresetButtons();
+      applyFilters();
+    });
+}
+
+function drawMatrixChart() {
+  const container = document.getElementById("matrix-chart");
+  container.innerHTML = "";
+
+  const rank = state.matrixRank;
+  const periods = [
+    { label: "Pre-1970", min: 1800, max: 1969 },
+    { label: "1970–79", min: 1970, max: 1979 },
+    { label: "1980–89", min: 1980, max: 1989 },
+    { label: "1990–99", min: 1990, max: 1999 },
+    { label: "2000–04", min: 2000, max: 2004 },
+    { label: "2005–09", min: 2005, max: 2009 },
+    { label: "2010–14", min: 2010, max: 2014 },
+    { label: "2015–17", min: 2015, max: 2017 },
+    { label: "2018–19", min: 2018, max: 2019 },
+    { label: "2020–21", min: 2020, max: 2021 },
+    { label: "2022–23", min: 2022, max: 2023 },
+    { label: "2024", min: 2024, max: 2024 },
+    { label: "2025–26", min: 2025, max: 2026 }
+  ];
+
+  const groupTotals = new Map();
+  for (const f of state.filtered) {
+    const p = f.properties;
+    if (p.year == null) continue;
+    const gName = p[rank] || "Unclassified";
+    groupTotals.set(gName, (groupTotals.get(gName) || 0) + p.count);
+  }
+
+  const topGroups = [...groupTotals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 14)
+    .map(([name]) => name);
+
+  if (!topGroups.length) {
+    container.innerHTML = `<div style="padding:18px;color:var(--muted);font-size:12.5px">No dated records in current selection for matrix heatmap.</div>`;
+    return;
+  }
+
+  const groupSet = new Set(topGroups);
+  const cellMap = new Map();
+  for (const f of state.filtered) {
+    const p = f.properties;
+    if (p.year == null) continue;
+    const gName = p[rank] || "Unclassified";
+    if (!groupSet.has(gName)) continue;
+    const period = periods.find(pr => p.year >= pr.min && p.year <= pr.max);
+    if (!period) continue;
+    const key = `${gName}||${period.label}`;
+    cellMap.set(key, (cellMap.get(key) || 0) + p.count);
+  }
+
+  const cells = [];
+  let maxCell = 1;
+  topGroups.forEach(gName => {
+    periods.forEach(pr => {
+      const count = cellMap.get(`${gName}||${pr.label}`) || 0;
+      if (count > maxCell) maxCell = count;
+      cells.push({ group: gName, period: pr, count });
+    });
+  });
+
+  const width = container.clientWidth || 1100;
+  const rowH = 24;
+  const margin = { top: 28, right: 16, bottom: 10, left: 175 };
+  const innerW = Math.max(320, width - margin.left - margin.right);
+  const innerH = topGroups.length * rowH;
+  const height = innerH + margin.top + margin.bottom;
+
+  const x = d3.scaleBand().domain(periods.map(p => p.label)).range([0, innerW]).padding(0.08);
+  const y = d3.scaleBand().domain(topGroups).range([0, innerH]).padding(0.12);
+  const color = d3.scaleSequentialLog(d3.interpolateYlGnBu).domain([1, Math.max(10, maxCell)]);
+
+  const svg = d3.select(container).append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("height", height);
+
+  const g = svg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  g.append("g")
+    .attr("class", "axis")
+    .call(d3.axisTop(x).tickSize(0))
+    .select(".domain").remove();
+
+  g.append("g")
+    .attr("class", "axis")
+    .call(d3.axisLeft(y).tickSize(0))
+    .select(".domain").remove();
+
+  g.selectAll("rect.cell")
+    .data(cells)
+    .join("rect")
+    .attr("class", "cell")
+    .attr("x", d => x(d.period.label))
+    .attr("y", d => y(d.group))
+    .attr("width", x.bandwidth())
+    .attr("height", y.bandwidth())
+    .attr("rx", 3)
+    .attr("fill", d => d.count > 0 ? color(d.count) : "#f1f5f7")
+    .on("mousemove", (ev, d) => {
+      showTip(
+        ev,
+        `<b>${esc(d.group)}</b> (${esc(RANK_LABELS[rank])})<br>` +
+        `Period: <b>${esc(d.period.label)}</b><br>` +
+        `Occurrences: <b>${fmt(d.count)}</b><br>` +
+        `<span style="color:#9fd2dc">Click to filter to this ${esc(RANK_LABELS[rank].toLowerCase())} &amp; period</span>`
+      );
+    })
+    .on("mouseleave", hideTip)
+    .on("click", (_, d) => {
+      state.filters[rank] = d.group;
+      state.filters.yearMin = d.period.min;
+      state.filters.yearMax = d.period.max;
+      document.getElementById("year-min").value = d.period.min;
+      document.getElementById("year-max").value = d.period.max;
+      syncPresetButtons();
+      applyFilters();
+    });
+}
+</script>
+</body>
+</html>
