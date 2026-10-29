@@ -1,0 +1,1875 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAMBIO Fiji — Priority Sites Optimal Sample Survey Sizing</title>
+<link rel="icon" href="https://agenticpacific.com.fj/sambio/sambio.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+<style>
+:root {
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-hover: #334155;
+  --panel: #ffffff;
+  --panel-bg: rgba(255, 255, 255, 0.95);
+  --border: #e2e8f0;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --accent: #0b7285;
+  --accent-light: #e3f2f5;
+  --accent-dark: #085462;
+  --marine: #0284c7;
+  --terrestrial: #16a34a;
+  --coastal: #d97706;
+  --danger: #ef4444;
+  --success: #10b981;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.15), 0 4px 6px -4px rgba(0,0,0,0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.2);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: var(--font); color: var(--ink); background: #f8fafc; }
+
+/* Main Application Shell */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Header */
+header.app-header {
+  background: linear-gradient(135deg, #0b7285 0%, #0c5c6b 50%, #0f3952 100%);
+  color: #ffffff;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 30;
+  flex: none;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.logo-container {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.logo-container img {
+  height: 38px;
+  width: auto;
+  display: block;
+}
+.header-titles h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.header-titles p {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #bfe3ea;
+  font-weight: 400;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(4px);
+}
+.btn:hover {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.4);
+}
+.btn-primary {
+  background: #ffffff;
+  color: #0b7285;
+  border-color: #ffffff;
+}
+.btn-primary:hover {
+  background: #f0fdfa;
+  color: #085462;
+}
+
+/* KPI Banner */
+.kpi-strip {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  overflow-x: auto;
+  flex: none;
+  z-index: 20;
+}
+.kpi-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 130px;
+}
+.kpi-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.kpi-value {
+  font-size: 20px;
+  font-weight: 750;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+.kpi-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+
+/* Main Split View: Left Drawer & Right Map */
+.main-content {
+  display: flex;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left Sidebar Controls & Table */
+.sidebar {
+  width: 580px;
+  min-width: 480px;
+  max-width: 650px;
+  background: #ffffff;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  z-index: 10;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.04);
+}
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 32px 20px;
+}
+
+/* Section Cards */
+.section-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.section-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Form Controls & Toggles */
+.form-group {
+  margin-bottom: 14px;
+}
+.form-group:last-child {
+  margin-bottom: 0;
+}
+.form-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+.form-val-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 1px 7px;
+  border-radius: 5px;
+}
+.slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Segmented Control / Button Groups */
+.segmented-control {
+  display: flex;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+  gap: 2px;
+}
+.segment-btn {
+  flex: 1;
+  text-align: center;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.segment-btn.active {
+  background: #ffffff;
+  color: #0b7285;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.help-text {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Site Table */
+.sites-table-container {
+  overflow-x: auto;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+table.sites-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+table.sites-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 650;
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+table.sites-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+table.sites-table tr:hover {
+  background: #f8fafc;
+  cursor: pointer;
+}
+table.sites-table tr.selected {
+  background: #e0f2fe !important;
+}
+.site-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+.sample-pill {
+  font-weight: 750;
+  font-size: 12px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #0369a1;
+  display: inline-block;
+}
+
+/* Chart Canvas */
+.chart-box {
+  margin-top: 12px;
+  height: 180px;
+  position: relative;
+}
+
+/* Site Dossier Drawer / Card */
+.site-dossier {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 14px;
+}
+.dossier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.dossier-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.dossier-subtitle {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.village-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.village-pill {
+  font-size: 11px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #334155;
+}
+
+/* Map Container */
+.map-container {
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Floating Map Controls & Overlays */
+.map-floating-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 5;
+  width: 250px;
+  font-size: 12px;
+}
+.floating-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: #0f172a;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: #334155;
+}
+.layer-toggle input {
+  cursor: pointer;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: #475569;
+  margin-top: 4px;
+}
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.map-site-selector {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.map-site-selector select {
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+}
+
+/* MapLibre Popup Overrides */
+.maplibregl-popup-content {
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: var(--shadow-xl);
+  font-family: var(--font);
+  max-width: 280px;
+}
+.popup-site-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+.popup-meta {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+.popup-metric {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  margin-bottom: 4px;
+  border-bottom: 1px dashed #f1f5f9;
+  padding-bottom: 2px;
+}
+.popup-metric-val {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Print Optimization */
+@media print {
+  header.app-header, .map-container, .btn, .map-floating-panel, .map-site-selector {
+    display: none !important;
+  }
+  .app-container, .main-content, .sidebar {
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .sidebar-scroll {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  body {
+    background: #ffffff !important;
+    font-size: 11pt !important;
+  }
+  .section-card {
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-container">
+        <img src="https://agenticpacific.com.fj/sambio/sambio.png" alt="SAMBIO Fiji">
+      </div>
+      <div class="header-titles">
+        <h1>SAMBIO Fiji — Priority Sites Optimal Sample Survey Sizing</h1>
+        <p>Interactive Socio-Economic & Household Baseline Sampling Planner across 8 Priority Conservation Sites</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" id="btnExportCSV" title="Download survey sample allocation plan as CSV">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn" id="btnPrintBrief" title="Print executive decision summary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print Brief
+      </button>
+      <button class="btn btn-primary" id="btnResetDefaults" title="Restore default survey design parameters">
+        Reset Defaults
+      </button>
+    </div>
+  </header>
+
+  <!-- Live KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-item" style="border-right: 1px solid var(--border); padding-right: 16px; margin-right: 4px; min-width: 170px;">
+      <span class="kpi-label">Active Scope</span>
+      <div class="kpi-value-row">
+        <span class="kpi-value" id="kpiScopeTitle" style="font-size: 15px; font-weight: 700; color: #0b7285;">All 8 Sites</span>
+      </div>
+      <div id="kpiScopeSub" style="font-size: 10.5px; color: var(--muted); margin-top: 2px;">Aggregated Network</div>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Target Sample Size (n)</span>
+      <div class="kpi-value-row">
+        <span class="kpi-value" id="kpiTotalSample">-</span>
+        <span class="kpi-badge" id="kpiSampleBadge">95% CI</span>
+      </div>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Target Units (N)</span>
+      <div class="kpi-value-row">
+        <span class="kpi-value" id="kpiTotalUnits">-</span>
+        <span class="kpi-badge" id="kpiUnitTypeBadge">Households</span>
+      </div>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Catchment Pop (2026)</span>
+      <div class="kpi-value-row">
+        <span class="kpi-value" id="kpiTotalPop">-</span>
+      </div>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Building Footprints</span>
+      <div class="kpi-value-row">
+        <span class="kpi-value" id="kpiTotalBldg">-</span>
+      </div>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Customary Villages</span>
+      <div class="kpi-value-row">
+        <span class="kpi-value" id="kpiTotalVillages">-</span>
+      </div>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Field Teams Required</span>
+      <div class="kpi-value-row">
+        <span class="kpi-value" id="kpiTotalTeams">-</span>
+        <span class="kpi-badge" id="kpiDaysBadge">14 Days</span>
+      </div>
+    </div>
+    <div class="kpi-item">
+      <span class="kpi-label">Sampling Fraction</span>
+      <div class="kpi-value-row">
+        <span class="kpi-value" id="kpiSamplingFraction">-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Split Body Layout -->
+  <div class="main-content">
+    <!-- Left Drawer / Controls & Matrix -->
+    <div class="sidebar">
+      <div class="sidebar-scroll">
+
+        <!-- Card 1: Statistical Sampling Engine -->
+        <div class="section-card">
+          <div class="section-title">
+            <span>Statistical Sizing Engine</span>
+            <span class="section-badge">Cochran + FPC</span>
+          </div>
+
+          <!-- Target Unit (PSU) -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <span class="form-label">Primary Sampling Unit (PSU)</span>
+            </div>
+            <div class="segmented-control" id="ctrlTargetUnit">
+              <button class="segment-btn active" data-unit="households">🏢 Households (Buildings Frame)</button>
+              <button class="segment-btn" data-unit="population">👥 Resident Pop (Pop Grid)</button>
+            </div>
+            <div class="help-text">Households use Global Building Atlas structures as sampling frame proxy. Ringgold uses Fiji demographic factor (Pop / 4.8).</div>
+          </div>
+
+          <!-- Catchment Buffer -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <span class="form-label">Community Catchment Radius</span>
+            </div>
+            <div class="segmented-control" id="ctrlBuffer">
+              <button class="segment-btn" data-buffer="0">Strict (0 km)</button>
+              <button class="segment-btn active" data-buffer="1000">1 km Buffer</button>
+              <button class="segment-btn" data-buffer="2000">2 km Buffer</button>
+              <button class="segment-btn" data-buffer="5000">5 km Buffer</button>
+            </div>
+            <div class="help-text">Buffers capture customary resource-owning villages adjacent to protected forest & marine boundaries.</div>
+          </div>
+
+          <!-- Confidence Level -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <span class="form-label">Confidence Level</span>
+            </div>
+            <div class="segmented-control" id="ctrlConfidence">
+              <button class="segment-btn" data-conf="90">90% (Z=1.645)</button>
+              <button class="segment-btn active" data-conf="95">95% (Z=1.960)</button>
+              <button class="segment-btn" data-conf="99">99% (Z=2.576)</button>
+            </div>
+          </div>
+
+          <!-- Margin of Error -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <span class="form-label">Margin of Error (e)</span>
+              <span class="form-val-badge" id="valMoe">±5.0%</span>
+            </div>
+            <input type="range" class="slider" id="sliderMoe" min="1" max="15" step="0.5" value="5.0">
+          </div>
+
+          <!-- Cluster Design Effect -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <span class="form-label">Cluster Design Effect (Deff)</span>
+              <span class="form-val-badge" id="valDeff">1.5</span>
+            </div>
+            <input type="range" class="slider" id="sliderDeff" min="1.0" max="3.0" step="0.1" value="1.5">
+            <div class="help-text">Accounts for clustering within villages (1.0 = SRS, 1.5 = Standard Fiji Village Survey, 2.0 = High Intra-cluster Correlation).</div>
+          </div>
+
+          <!-- Non-Response Buffer -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <span class="form-label">Anticipated Non-Response</span>
+              <span class="form-val-badge" id="valNonResponse">10%</span>
+            </div>
+            <input type="range" class="slider" id="sliderNonResponse" min="0" max="30" step="1" value="10">
+          </div>
+
+          <!-- Stratification Allocation Mode -->
+          <div class="form-group">
+            <div class="form-label-row">
+              <span class="form-label">Sample Allocation Strategy</span>
+            </div>
+            <div class="segmented-control" id="ctrlAllocation">
+              <button class="segment-btn active" data-alloc="independent" title="Each site independently powered for local reporting">Site Independent</button>
+              <button class="segment-btn" data-alloc="proportional" title="Total sample allocated proportional to site size">Proportional</button>
+              <button class="segment-btn" data-alloc="equal" title="Equal sample across 8 sites">Equal</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Field Logistics & Operational Planner -->
+        <div class="section-card">
+          <div class="section-title">
+            <span>Field Survey Logistics Planner</span>
+            <span class="section-badge">Capacity & Teams</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <div class="form-label-row">
+                <span class="form-label">Interviews / Team / Day</span>
+                <span class="form-val-badge" id="valInterviewsPerDay">4</span>
+              </div>
+              <input type="range" class="slider" id="sliderInterviewsPerDay" min="2" max="10" step="1" value="4">
+            </div>
+            <div class="form-group">
+              <div class="form-label-row">
+                <span class="form-label">Survey Window (Days)</span>
+                <span class="form-val-badge" id="valSurveyDays">14</span>
+              </div>
+              <input type="range" class="slider" id="sliderSurveyDays" min="5" max="30" step="1" value="14">
+            </div>
+          </div>
+          <div class="help-text" id="logisticsSummaryText">Each team can complete approx. 56 interviews over a 14-day campaign.</div>
+        </div>
+
+        <!-- Card 3: Priority Sites Sizing Matrix Table -->
+        <div class="section-card">
+          <div class="section-title">
+            <span>8 Priority Sites Sampling Matrix</span>
+            <span class="section-badge">Click row to inspect</span>
+          </div>
+
+          <div class="sites-table-container">
+            <table class="sites-table" id="sitesTable">
+              <thead>
+                <tr>
+                  <th>Site Name</th>
+                  <th>Category</th>
+                  <th style="text-align: right;">Units (N)</th>
+                  <th style="text-align: right;">Villages</th>
+                  <th style="text-align: right;">Sample (n)</th>
+                  <th style="text-align: right;">Frac %</th>
+                  <th style="text-align: right;">Teams</th>
+                </tr>
+              </thead>
+              <tbody id="sitesTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Card 4: Allocation Visualizer Chart -->
+        <div class="section-card">
+          <div class="section-title">
+            <span>Sample Distribution by Priority Site</span>
+          </div>
+          <div class="chart-box" id="chartContainer">
+            <!-- Dynamic SVG Chart -->
+          </div>
+        </div>
+
+        <!-- Card 5: Selected Site Deep Dive Dossier -->
+        <div class="site-dossier" id="siteDossier" style="display: none;">
+          <div class="dossier-header">
+            <div>
+              <div class="dossier-title" id="dossierName">-</div>
+              <div class="dossier-subtitle" id="dossierMeta">-</div>
+            </div>
+            <span class="sample-pill" id="dossierSampleBadge">n = -</span>
+          </div>
+          <p style="font-size: 11.5px; color: #475569; margin: 4px 0 10px 0; line-height: 1.45;" id="dossierDescription">-</p>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
+            <div style="background: #ffffff; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);">
+              <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Catchment Pop</div>
+              <div style="font-size: 14px; font-weight: 700;" id="dossierPop">-</div>
+            </div>
+            <div style="background: #ffffff; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);">
+              <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Buildings / HH</div>
+              <div style="font-size: 14px; font-weight: 700;" id="dossierBldg">-</div>
+            </div>
+            <div style="background: #ffffff; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);">
+              <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">Village Count</div>
+              <div style="font-size: 14px; font-weight: 700;" id="dossierVillagesCount">-</div>
+            </div>
+          </div>
+
+          <div style="font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 4px;">Catchment Customary Villages:</div>
+          <div class="village-pills" id="dossierVillageList">
+            <!-- Village Pills -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Map Canvas -->
+    <div class="map-container">
+      <div id="map"></div>
+
+      <!-- Quick Site Fly-to Selector -->
+      <div class="map-site-selector">
+        <label for="selectSiteFocus" style="font-size: 11px; font-weight: 700; color: #475569;">Focus Site:</label>
+        <select id="selectSiteFocus">
+          <option value="all">🗺️ Entire Fiji Overview</option>
+          <option value="Nakauvadra">Nakauvadra (Ra)</option>
+          <option value="Nakorotubu">Nakorotubu (Ra/Tailevu)</option>
+          <option value="Delaikoro">Delaikoro (Cakaudrove)</option>
+          <option value="Tunuloa Natewa">Tunuloa Natewa (Natewa)</option>
+          <option value="Ringgold Islands">Ringgold Islands</option>
+          <option value="Lau Seascape">Lau Seascape</option>
+          <option value="Greater Tomaniivi Conservation Area">Greater Tomaniivi</option>
+          <option value="Kadavu">Kadavu Archipelago</option>
+        </select>
+      </div>
+
+      <!-- Floating Map Layer Controls & Legend -->
+      <div class="map-floating-panel">
+        <div class="floating-title">
+          <span>Map Layers & Legend</span>
+          <span style="font-size: 10px; color: var(--muted);" id="lblActiveBuffer">1km Buffer</span>
+        </div>
+
+        <label class="layer-toggle">
+          <input type="checkbox" id="layerToggleSites" checked>
+          <span class="legend-swatch" style="background: #0b7285;"></span>
+          <span>8 SAMBIO Priority Sites</span>
+        </label>
+
+        <label class="layer-toggle">
+          <input type="checkbox" id="layerToggleBuffer" checked>
+          <span class="legend-swatch" style="background: rgba(234, 179, 8, 0.4); border: 1px dashed #ca8a04;"></span>
+          <span>Catchment Buffer Zone</span>
+        </label>
+
+        <label class="layer-toggle">
+          <input type="checkbox" id="layerToggleVillages" checked>
+          <span class="legend-swatch" style="background: #ef4444; border-radius: 50%;"></span>
+          <span>Customary Villages</span>
+        </label>
+        <label class="layer-toggle" style="margin-left: 20px; font-size: 11px;">
+          <input type="checkbox" id="layerToggleVillageLabels" checked>
+          <span>🏷️ Show Village Labels</span>
+        </label>
+
+        <label class="layer-toggle">
+          <input type="checkbox" id="layerToggleBuildings" checked>
+          <span class="legend-swatch" style="background: #0284c7;"></span>
+          <span>Building Footprints (Atlas)</span>
+        </label>
+
+        <label class="layer-toggle">
+          <input type="checkbox" id="layerTogglePopgridCog" checked>
+          <span class="legend-swatch" style="background: linear-gradient(90deg, #fef0d9, #fc8d59, #b30000, #49006a); border: 1px solid #94a3b8;"></span>
+          <span style="font-weight: 600;">2026 Pop Grid (COG GeoTIFF)</span>
+        </label>
+
+        <!-- Pop Grid COG Opacity & Color Ramp Legend -->
+        <div id="popgridCogControls" style="margin: 4px 0 10px 20px; font-size: 11px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+            <span style="color: var(--muted);">COG Opacity:</span>
+            <span id="valCogOpacity" style="font-weight: 600; color: #0b7285;">85%</span>
+          </div>
+          <input type="range" class="slider" id="sliderCogOpacity" min="10" max="100" value="85" style="height: 4px; margin-bottom: 6px;">
+          
+          <div style="font-size: 10px; color: var(--muted); margin-bottom: 2px;">Population Density (people / 100m cell):</div>
+          <div style="height: 8px; border-radius: 3px; background: linear-gradient(90deg, rgba(254,240,217,0.5) 0%, #fdd49e 15%, #fc8d59 40%, #e34a33 70%, #7f0000 100%); border: 1px solid #cbd5e1;"></div>
+          <div style="display: flex; justify-content: space-between; font-size: 9.5px; color: #64748b; margin-top: 2px;">
+            <span>0</span>
+            <span>2</span>
+            <span>15</span>
+            <span>40</span>
+            <span>100+</span>
+          </div>
+        </div>
+
+        <label class="layer-toggle">
+          <input type="checkbox" id="layerTogglePopgrid">
+          <span class="legend-swatch" style="background: #e11d48;"></span>
+          <span>Pop Grid Centroids (Heatmap)</span>
+        </label>
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 8px 0;">
+
+        <div style="font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 4px;">Basemap:</div>
+        <div class="segmented-control" id="ctrlBasemap">
+          <button class="segment-btn active" data-style="satellite">Satellite</button>
+          <button class="segment-btn" data-style="positron">Light</button>
+          <button class="segment-btn" data-style="dark">Dark</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Load Self-Contained Offline GeoJSON & Stats Bundle -->
+<script src="public/data/sambio_bundle.js"></script>
+
+<!-- Load MapLibre GL JS -->
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+
+<script>
+// State Management
+const STATE = {
+  unit: 'households', // 'households' or 'population'
+  buffer: '1000',     // '0', '1000', '2000', '5000'
+  confidence: '95',   // '90', '95', '99'
+  moe: 0.05,          // 0.01 to 0.15
+  p: 0.50,            // 0.1 to 0.9
+  deff: 1.5,          // 1.0 to 3.0
+  nonResponse: 0.10,  // 0.0 to 0.30
+  allocation: 'independent', // 'independent', 'proportional', 'equal'
+  interviewsPerDay: 4,
+  surveyDays: 14,
+  selectedSite: null,
+  activeBasemap: 'satellite'
+};
+
+const Z_SCORES = {
+  '90': 1.645,
+  '95': 1.960,
+  '99': 2.576
+};
+
+const SITE_COLORS = {
+  'Nakauvadra': '#16a34a',
+  'Nakorotubu': '#059669',
+  'Delaikoro': '#0d9488',
+  'Tunuloa Natewa': '#0284c7',
+  'Ringgold Islands': '#2563eb',
+  'Lau Seascape': '#4f46e5',
+  'Greater Tomaniivi Conservation Area': '#15803d',
+  'Kadavu': '#0891b2'
+};
+
+const SITE_VIEWPORTS = {
+  'all': { center: [179.4, -17.5], zoom: 6.5 },
+  'Nakauvadra': { center: [178.1915, -17.4011], zoom: 11.2 },
+  'Nakorotubu': { center: [178.3995, -17.5841], zoom: 10.8 },
+  'Delaikoro': { center: [179.1988, -16.6470], zoom: 10.9 },
+  'Tunuloa Natewa': { center: [179.8130, -16.5922], zoom: 11.5 },
+  'Ringgold Islands': { center: [-179.5176, -16.1976], zoom: 9.8 },
+  'Lau Seascape': { center: [-179.0000, -18.2000], zoom: 6.8 },
+  'Greater Tomaniivi Conservation Area': { center: [178.0748, -17.6423], zoom: 11.4 },
+  'Kadavu': { center: [178.2741, -19.0227], zoom: 10.0 }
+};
+
+// Check if data bundle loaded
+const DATA = window.SAMBIO_DATA || { summary: { sites: {} }, sites: { features: [] } };
+
+// Statistical Sample Sizing Functions
+function cochranSample(N, confLevel, moe, p, deff, nonResponseRate) {
+  if (!N || N <= 0) return { n0: 0, n_fpc: 0, n_deff: 0, n_final: 0, fraction: 0 };
+  const Z = Z_SCORES[confLevel] || 1.96;
+  const n0 = (Math.pow(Z, 2) * p * (1 - p)) / Math.pow(moe, 2);
+  const n_fpc = n0 / (1 + (n0 - 1) / N);
+  const n_deff = n_fpc * deff;
+  let n_final = Math.ceil(n_deff / (1 - nonResponseRate));
+  if (n_final > N) n_final = Math.round(N);
+  return {
+    n0: Math.round(n0),
+    n_fpc: Math.round(n_fpc),
+    n_deff: Math.round(n_deff),
+    n_final: n_final,
+    fraction: (n_final / N) * 100
+  };
+}
+
+// Compute sampling results across all 8 sites
+function computeSamplingPlan() {
+  const sitesData = DATA.summary.sites;
+  const siteKeys = Object.keys(sitesData);
+  const siteResults = {};
+
+  let totalN = 0;
+  let totalPop = 0;
+  let totalBldg = 0;
+  let totalVillages = 0;
+
+  // Gather frame units
+  siteKeys.forEach(name => {
+    const s = sitesData[name];
+    const b = s.buffers[STATE.buffer] || s.buffers['0'];
+    const pop = b.population || 0;
+    const bldg = b.building_count || 0;
+    const hh = b.estimated_households || bldg;
+    const vils = b.village_count || 0;
+
+    const N = STATE.unit === 'households' ? hh : Math.round(pop);
+
+    totalN += N;
+    totalPop += pop;
+    totalBldg += bldg;
+    totalVillages += vils;
+
+    siteResults[name] = {
+      name: name,
+      site_id: s.site_id,
+      meta: s.metadata,
+      N: N,
+      pop: pop,
+      bldg: bldg,
+      hh: hh,
+      villages: b.villages || [],
+      villageCount: vils,
+      area_km2: b.area_km2
+    };
+  });
+
+  // Calculate allocation
+  const teamCapacity = STATE.interviewsPerDay * STATE.surveyDays;
+
+  if (STATE.allocation === 'independent') {
+    // Each site sized independently to achieve target MOE locally
+    siteKeys.forEach(name => {
+      const res = cochranSample(siteResults[name].N, STATE.confidence, STATE.moe, STATE.p, STATE.deff, STATE.nonResponse);
+      const n = res.n_final;
+      const k = Math.min(siteResults[name].villageCount, Math.max(1, Math.ceil(n / 12)));
+      const m = k > 0 ? Math.ceil(n / k) : 0;
+      const teams = Math.max(1, Math.ceil(n / teamCapacity));
+
+      siteResults[name].sampleSize = n;
+      siteResults[name].samplingFraction = res.fraction;
+      siteResults[name].villagesToSample = k;
+      siteResults[name].samplePerVillage = m;
+      siteResults[name].teamsRequired = teams;
+    });
+  } else if (STATE.allocation === 'proportional') {
+    // Sized for Fiji total, then allocated proportional to stratum size
+    const overallRes = cochranSample(totalN, STATE.confidence, STATE.moe, STATE.p, STATE.deff, STATE.nonResponse);
+    const totalSampleTarget = overallRes.n_final;
+
+    siteKeys.forEach(name => {
+      const N = siteResults[name].N;
+      let n = totalN > 0 ? Math.round(totalSampleTarget * (N / totalN)) : 0;
+      if (N > 0 && n < 5) n = Math.min(N, 5); // floor
+      if (n > N) n = N;
+
+      const k = Math.min(siteResults[name].villageCount, Math.max(1, Math.ceil(n / 12)));
+      const m = k > 0 ? Math.ceil(n / k) : 0;
+      const teams = Math.max(1, Math.ceil(n / teamCapacity));
+
+      siteResults[name].sampleSize = n;
+      siteResults[name].samplingFraction = N > 0 ? (n / N) * 100 : 0;
+      siteResults[name].villagesToSample = k;
+      siteResults[name].samplePerVillage = m;
+      siteResults[name].teamsRequired = teams;
+    });
+  } else if (STATE.allocation === 'equal') {
+    // Equal sample across 8 sites
+    const overallRes = cochranSample(totalN, STATE.confidence, STATE.moe, STATE.p, STATE.deff, STATE.nonResponse);
+    const totalSampleTarget = overallRes.n_final;
+    const perSiteTarget = Math.ceil(totalSampleTarget / 8);
+
+    siteKeys.forEach(name => {
+      const N = siteResults[name].N;
+      let n = Math.min(N, perSiteTarget);
+      const k = Math.min(siteResults[name].villageCount, Math.max(1, Math.ceil(n / 12)));
+      const m = k > 0 ? Math.ceil(n / k) : 0;
+      const teams = Math.max(1, Math.ceil(n / teamCapacity));
+
+      siteResults[name].sampleSize = n;
+      siteResults[name].samplingFraction = N > 0 ? (n / N) * 100 : 0;
+      siteResults[name].villagesToSample = k;
+      siteResults[name].samplePerVillage = m;
+      siteResults[name].teamsRequired = teams;
+    });
+  }
+
+  // Sum total sample & teams
+  let grandSample = 0;
+  let grandTeams = 0;
+  siteKeys.forEach(name => {
+    grandSample += siteResults[name].sampleSize;
+    grandTeams += siteResults[name].teamsRequired;
+  });
+
+  return {
+    sites: siteResults,
+    totalN: totalN,
+    totalPop: totalPop,
+    totalBldg: totalBldg,
+    totalVillages: totalVillages,
+    grandSample: grandSample,
+    grandTeams: grandTeams,
+    samplingFraction: totalN > 0 ? (grandSample / totalN) * 100 : 0,
+    teamCapacity: teamCapacity
+  };
+}
+
+// Render UI Components
+function updateDashboard() {
+  const plan = computeSamplingPlan();
+
+  // 1. KPIs: Dynamic display per selected site, default for all sites
+  const isSiteSelected = STATE.selectedSite && STATE.selectedSite !== 'all' && plan.sites[STATE.selectedSite];
+
+  if (isSiteSelected) {
+    const s = plan.sites[STATE.selectedSite];
+    const dotColor = SITE_COLORS[s.name] || '#0b7285';
+
+    document.getElementById('kpiScopeTitle').innerHTML = `
+      <span class="site-color-dot" style="background: ${dotColor}; width: 10px; height: 10px; display: inline-block;"></span>
+      <span>${s.name}</span>
+    `;
+    document.getElementById('kpiScopeSub').innerHTML = `
+      ${s.meta.island} • <a href="javascript:void(0)" onclick="selectSite('all')" style="color: #0b7285; font-weight: 700; text-decoration: underline;">Reset to All Sites</a>
+    `;
+
+    document.getElementById('kpiTotalSample').textContent = s.sampleSize.toLocaleString();
+    document.getElementById('kpiTotalUnits').textContent = s.N.toLocaleString();
+    document.getElementById('kpiTotalPop').textContent = Math.round(s.pop).toLocaleString();
+    document.getElementById('kpiTotalBldg').textContent = s.bldg.toLocaleString();
+    document.getElementById('kpiTotalVillages').textContent = s.villageCount.toLocaleString();
+    document.getElementById('kpiTotalTeams').textContent = s.teamsRequired.toLocaleString();
+    document.getElementById('kpiSamplingFraction').textContent = s.samplingFraction.toFixed(1) + '%';
+    document.getElementById('kpiSampleBadge').textContent = `${s.name} (${STATE.confidence}% CI)`;
+  } else {
+    document.getElementById('kpiScopeTitle').textContent = 'All 8 Sites';
+    document.getElementById('kpiScopeSub').textContent = 'Aggregated Network Total';
+
+    document.getElementById('kpiTotalSample').textContent = plan.grandSample.toLocaleString();
+    document.getElementById('kpiTotalUnits').textContent = plan.totalN.toLocaleString();
+    document.getElementById('kpiTotalPop').textContent = Math.round(plan.totalPop).toLocaleString();
+    document.getElementById('kpiTotalBldg').textContent = plan.totalBldg.toLocaleString();
+    document.getElementById('kpiTotalVillages').textContent = plan.totalVillages.toLocaleString();
+    document.getElementById('kpiTotalTeams').textContent = plan.grandTeams.toLocaleString();
+    document.getElementById('kpiSamplingFraction').textContent = plan.samplingFraction.toFixed(1) + '%';
+    document.getElementById('kpiSampleBadge').textContent = `${STATE.confidence}% CI (±${(STATE.moe * 100).toFixed(1)}%)`;
+  }
+
+  document.getElementById('kpiUnitTypeBadge').textContent = STATE.unit === 'households' ? 'Households' : 'Population';
+  document.getElementById('kpiDaysBadge').textContent = `${STATE.surveyDays} Days`;
+
+  // Logistics helper text
+  if (isSiteSelected) {
+    const s = plan.sites[STATE.selectedSite];
+    document.getElementById('logisticsSummaryText').textContent =
+      `For ${s.name}: ${s.teamsRequired} team(s) required to survey ${s.sampleSize} ${STATE.unit} across ${s.villagesToSample} village cluster(s) (~${s.samplePerVillage} per village) over ${STATE.surveyDays} days.`;
+  } else {
+    document.getElementById('logisticsSummaryText').textContent =
+      `Each field team can conduct ~${plan.teamCapacity} interviews over ${STATE.surveyDays} days (@ ${STATE.interviewsPerDay}/day). Total campaign requires ${plan.grandTeams} field teams (${plan.grandTeams * STATE.surveyDays} team-days).`;
+  }
+
+  // 2. Sites Table
+  const tbody = document.getElementById('sitesTableBody');
+  tbody.innerHTML = '';
+
+  const siteKeys = Object.keys(plan.sites);
+  siteKeys.forEach(name => {
+    const s = plan.sites[name];
+    const tr = document.createElement('tr');
+    if (STATE.selectedSite === name) tr.classList.add('selected');
+
+    const dotColor = SITE_COLORS[name] || '#0b7285';
+    tr.innerHTML = `
+      <td>
+        <span class="site-color-dot" style="background: ${dotColor}"></span>
+        <strong>${name}</strong>
+      </td>
+      <td><span style="font-size: 10.5px; color: var(--muted);">${s.meta.category}</span></td>
+      <td style="text-align: right; font-weight: 600;">${s.N.toLocaleString()}</td>
+      <td style="text-align: right;">${s.villageCount}</td>
+      <td style="text-align: right;"><span class="sample-pill">${s.sampleSize.toLocaleString()}</span></td>
+      <td style="text-align: right; color: var(--muted);">${s.samplingFraction.toFixed(1)}%</td>
+      <td style="text-align: right; font-weight: 600;">${s.teamsRequired}</td>
+    `;
+
+    tr.addEventListener('click', () => {
+      selectSite(name);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  // 3. Render SVG Chart
+  renderChart(plan);
+
+  // 4. Update Dossier if site selected, hide if all sites
+  if (isSiteSelected) {
+    renderDossier(plan.sites[STATE.selectedSite]);
+  } else {
+    const dossier = document.getElementById('siteDossier');
+    if (dossier) dossier.style.display = 'none';
+  }
+
+  // 5. Update map buffer layer filter
+  updateMapBufferLayer();
+}
+
+// Render SVG Bar Chart
+function renderChart(plan) {
+  const container = document.getElementById('chartContainer');
+  const siteKeys = Object.keys(plan.sites);
+  const maxSample = Math.max(...siteKeys.map(k => plan.sites[k].sampleSize), 10);
+
+  let barsHTML = '';
+  const height = 150;
+  const barWidth = 38;
+  const gap = 24;
+  const startX = 20;
+
+  siteKeys.forEach((name, i) => {
+    const s = plan.sites[name];
+    const barHeight = Math.round((s.sampleSize / maxSample) * 110);
+    const x = startX + i * (barWidth + gap);
+    const y = height - barHeight - 24;
+    const color = SITE_COLORS[name] || '#0b7285';
+    const shortName = name.split(' ')[0].substring(0, 7);
+
+    barsHTML += `
+      <g style="cursor: pointer;" onclick="selectSite('${name}')">
+        <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="4" fill="${color}" opacity="0.9">
+          <title>${name}: n = ${s.sampleSize} (${s.samplingFraction.toFixed(1)}%)</title>
+        </rect>
+        <text x="${x + barWidth/2}" y="${y - 5}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#0f172a">${s.sampleSize}</text>
+        <text x="${x + barWidth/2}" y="${height - 8}" font-size="9" text-anchor="middle" fill="#64748b">${shortName}</text>
+      </g>
+    `;
+  });
+
+  container.innerHTML = `
+    <svg width="100%" height="100%" viewBox="0 0 520 ${height}" preserveAspectRatio="xMidYMid meet">
+      <!-- Baseline -->
+      <line x1="10" y1="${height - 24}" x2="510" y2="${height - 24}" stroke="#e2e8f0" stroke-width="1.5" />
+      ${barsHTML}
+    </svg>
+  `;
+}
+
+// Render Site Deep Dive Dossier
+function renderDossier(siteData) {
+  const dossier = document.getElementById('siteDossier');
+  dossier.style.display = 'block';
+
+  document.getElementById('dossierName').textContent = siteData.name;
+  document.getElementById('dossierMeta').textContent = `${siteData.meta.type} • ${siteData.meta.island} (${siteData.meta.province})`;
+  document.getElementById('dossierSampleBadge').textContent = `Target Sample: n = ${siteData.sampleSize} (${siteData.teamsRequired} Teams)`;
+  document.getElementById('dossierDescription').textContent = siteData.meta.description;
+
+  document.getElementById('dossierPop').textContent = Math.round(siteData.pop).toLocaleString();
+  document.getElementById('dossierBldg').textContent = siteData.bldg.toLocaleString();
+  document.getElementById('dossierVillagesCount').textContent = siteData.villageCount;
+
+  const vlist = document.getElementById('dossierVillageList');
+  vlist.innerHTML = '';
+  if (siteData.villages.length === 0) {
+    vlist.innerHTML = '<span style="font-size: 11px; color: var(--muted); font-style: italic;">No registered customary village centers strictly inside this boundary radius. Neighboring provincial communities access this zone.</span>';
+  } else {
+    siteData.villages.forEach(vname => {
+      const span = document.createElement('span');
+      span.className = 'village-pill';
+      span.textContent = vname;
+      vlist.appendChild(span);
+    });
+  }
+}
+
+// Select a Site & Center Map
+function selectSite(name) {
+  // If clicking currently selected site again, toggle back to 'all'
+  if (STATE.selectedSite === name && name !== 'all') {
+    name = 'all';
+  }
+
+  STATE.selectedSite = (name === 'all') ? null : name;
+  document.getElementById('selectSiteFocus').value = name;
+
+  const vp = SITE_VIEWPORTS[name] || SITE_VIEWPORTS['all'];
+  if (map) {
+    map.flyTo({
+      center: vp.center,
+      zoom: vp.zoom,
+      speed: 1.2,
+      curve: 1.42,
+      essential: true
+    });
+  }
+
+  updateDashboard();
+}
+
+// Export CSV Feature
+function exportCSV() {
+  const plan = computeSamplingPlan();
+  let csv = 'Site Name,Category,Island,Province,Catchment Radius (m),Population (2026),Building Count,Estimated Households,Village Count,Confidence Level (%),Margin of Error (%),Deff,Non-Response Rate (%),Target Sample Size (n),Sampling Fraction (%),Villages to Sample (k),Sample per Village (m),Field Teams Required,Survey Days\n';
+
+  Object.keys(plan.sites).forEach(name => {
+    const s = plan.sites[name];
+    csv += `"${name}","${s.meta.category}","${s.meta.island}","${s.meta.province}",${STATE.buffer},${Math.round(s.pop)},${s.bldg},${s.hh},${s.villageCount},${STATE.confidence},${(STATE.moe*100).toFixed(1)},${STATE.deff},${(STATE.nonResponse*100).toFixed(0)},${s.sampleSize},${s.samplingFraction.toFixed(2)},${s.villagesToSample},${s.samplePerVillage},${s.teamsRequired},${STATE.surveyDays}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sambio_sample_sizing_plan_${STATE.unit}_${STATE.buffer}m.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// MapLibre Map Setup
+let map;
+
+const BASEMAP_STYLES = {
+  satellite: {
+    version: 8,
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    sources: {
+      'esri-satellite': {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics'
+      }
+    },
+    layers: [
+      {
+        id: 'esri-satellite-layer',
+        type: 'raster',
+        source: 'esri-satellite',
+        minzoom: 0,
+        maxzoom: 19
+      }
+    ]
+  },
+  positron: {
+    version: 8,
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    sources: {
+      'carto-positron': {
+        type: 'raster',
+        tiles: [
+          'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      }
+    },
+    layers: [{ id: 'carto-positron-layer', type: 'raster', source: 'carto-positron', minzoom: 0, maxzoom: 19 }]
+  },
+  dark: {
+    version: 8,
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    sources: {
+      'carto-dark': {
+        type: 'raster',
+        tiles: [
+          'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      }
+    },
+    layers: [{ id: 'carto-dark-layer', type: 'raster', source: 'carto-dark', minzoom: 0, maxzoom: 19 }]
+  }
+};
+
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map',
+    style: BASEMAP_STYLES[STATE.activeBasemap],
+    center: [179.4, -17.5],
+    zoom: 6.5,
+    renderWorldCopies: true
+  });
+
+  map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'bottom-right');
+  map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+  map.on('load', () => {
+    addMapLayers();
+  });
+}
+
+function addMapLayers() {
+  if (!map) return;
+
+  // 1. Buffer Layer
+  if (DATA.buffers && DATA.buffers.features) {
+    map.addSource('buffers-src', {
+      type: 'geojson',
+      data: DATA.buffers
+    });
+
+    map.addLayer({
+      id: 'buffers-fill',
+      type: 'fill',
+      source: 'buffers-src',
+      filter: ['==', ['get', 'buffer_m'], parseInt(STATE.buffer, 10)],
+      paint: {
+        'fill-color': '#eab308',
+        'fill-opacity': 0.18
+      }
+    });
+
+    map.addLayer({
+      id: 'buffers-line',
+      type: 'line',
+      source: 'buffers-src',
+      filter: ['==', ['get', 'buffer_m'], parseInt(STATE.buffer, 10)],
+      paint: {
+        'line-color': '#eab308',
+        'line-width': 1.5,
+        'line-dasharray': [3, 2]
+      }
+    });
+  }
+
+  // 2. Sites Layer
+  if (DATA.sites && DATA.sites.features) {
+    map.addSource('sites-src', {
+      type: 'geojson',
+      data: DATA.sites
+    });
+
+    map.addLayer({
+      id: 'sites-fill',
+      type: 'fill',
+      source: 'sites-src',
+      paint: {
+        'fill-color': [
+          'match',
+          ['get', 'Site_Name'],
+          'Nakauvadra', SITE_COLORS['Nakauvadra'],
+          'Nakorotubu', SITE_COLORS['Nakorotubu'],
+          'Delaikoro', SITE_COLORS['Delaikoro'],
+          'Tunuloa Natewa', SITE_COLORS['Tunuloa Natewa'],
+          'Ringgold Islands', SITE_COLORS['Ringgold Islands'],
+          'Lau Seascape', SITE_COLORS['Lau Seascape'],
+          'Greater Tomaniivi Conservation Area', SITE_COLORS['Greater Tomaniivi Conservation Area'],
+          'Kadavu', SITE_COLORS['Kadavu'],
+          '#0b7285'
+        ],
+        'fill-opacity': 0.35
+      }
+    });
+
+    map.addLayer({
+      id: 'sites-line',
+      type: 'line',
+      source: 'sites-src',
+      paint: {
+        'line-color': '#ffffff',
+        'line-width': 2.2,
+        'line-opacity': 0.95
+      }
+    });
+
+    // Site Labels
+    map.addLayer({
+      id: 'sites-labels',
+      type: 'symbol',
+      source: 'sites-src',
+      layout: {
+        'text-field': ['get', 'Site_Name'],
+        'text-size': 12,
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-offset': [0, 0],
+        'text-anchor': 'center',
+        'text-allow-overlap': false
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-halo-color': '#000000',
+        'text-halo-width': 2
+      }
+    });
+
+    // Click on Site
+    map.on('click', 'sites-fill', (e) => {
+      if (e.features && e.features.length > 0) {
+        const sName = e.features[0].properties.Site_Name;
+        selectSite(sName);
+      }
+    });
+
+    // Hover cursor
+    map.on('mouseenter', 'sites-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'sites-fill', () => { map.getCanvas().style.cursor = ''; });
+  }
+
+  // 2.5 Pop Grid COG Tiled Raster Layer
+  map.addSource('popgrid-cog-tiles', {
+    type: 'raster',
+    tiles: ['public/data/popgrid_tiles/{z}/{x}/{y}.png'],
+    tileSize: 256,
+    attribution: 'Fiji 2026 PopGrid &copy; SAMBIO'
+  });
+
+  map.addLayer({
+    id: 'popgrid-cog-layer',
+    type: 'raster',
+    source: 'popgrid-cog-tiles',
+    minzoom: 6,
+    maxzoom: 18,
+    paint: {
+      'raster-opacity': 0.85,
+      'raster-fade-duration': 100
+    }
+  });
+
+  // 3. Popgrid Density Points
+  if (DATA.popgrid && DATA.popgrid.features) {
+    map.addSource('popgrid-src', {
+      type: 'geojson',
+      data: DATA.popgrid
+    });
+
+    map.addLayer({
+      id: 'popgrid-heat',
+      type: 'heatmap',
+      source: 'popgrid-src',
+      layout: { 'visibility': 'none' },
+      paint: {
+        'heatmap-weight': ['interpolate', ['linear'], ['get', 'pop'], 0, 0, 50, 1],
+        'heatmap-intensity': 1.2,
+        'heatmap-color': [
+          'interpolate', ['linear'], ['heatmap-density'],
+          0, 'rgba(0, 0, 255, 0)',
+          0.2, '#fde047',
+          0.5, '#ea580c',
+          1, '#be123c'
+        ],
+        'heatmap-radius': 14,
+        'heatmap-opacity': 0.75
+      }
+    });
+  }
+
+  // 4. Buildings Layer
+  if (DATA.buildings && DATA.buildings.features) {
+    map.addSource('buildings-src', {
+      type: 'geojson',
+      data: DATA.buildings
+    });
+
+    map.addLayer({
+      id: 'buildings-points',
+      type: 'circle',
+      source: 'buildings-src',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 1.2, 11, 2.5, 14, 4.5],
+        'circle-color': '#38bdf8',
+        'circle-opacity': 0.8,
+        'circle-stroke-width': 0.5,
+        'circle-stroke-color': '#ffffff'
+      }
+    });
+  }
+
+  // 5. Villages Layer
+  if (DATA.villages && DATA.villages.features) {
+    map.addSource('villages-src', {
+      type: 'geojson',
+      data: DATA.villages
+    });
+
+    map.addLayer({
+      id: 'villages-circle',
+      type: 'circle',
+      source: 'villages-src',
+      paint: {
+        'circle-radius': 4.5,
+        'circle-color': '#ef4444',
+        'circle-stroke-width': 1.8,
+        'circle-stroke-color': '#ffffff'
+      }
+    });
+
+    map.addLayer({
+      id: 'villages-labels',
+      type: 'symbol',
+      source: 'villages-src',
+      minzoom: 6,
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-size': 11.5,
+        'text-offset': [0, 1.2],
+        'text-anchor': 'top',
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-optional': true,
+        'text-allow-overlap': false
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-halo-color': '#0f172a',
+        'text-halo-width': 2.5
+      }
+    });
+
+    // Village Popup
+    map.on('click', 'villages-circle', (e) => {
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const coords = e.features[0].geometry.coordinates.slice();
+        new maplibregl.Popup()
+          .setLngLat(coords)
+          .setHTML(`
+            <div style="font-weight: 700; font-size: 13px; color: #0f172a;">${props.name}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Customary Village • Associated Site: <strong>${props.site_name}</strong></div>
+            <div style="font-size: 11px; color: #475569; margin-top: 4px;">Catchment Zone: <strong>${props.buffer_m === 0 ? 'Strict Inside Site' : (props.buffer_m/1000) + ' km Buffer'}</strong></div>
+          `)
+          .addTo(map);
+      }
+    });
+
+    map.on('mouseenter', 'villages-circle', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'villages-circle', () => { map.getCanvas().style.cursor = ''; });
+  }
+}
+
+function updateMapBufferLayer() {
+  if (!map || !map.getLayer('buffers-fill')) return;
+  const bVal = parseInt(STATE.buffer, 10);
+  if (bVal === 0) {
+    map.setLayoutProperty('buffers-fill', 'visibility', 'none');
+    map.setLayoutProperty('buffers-line', 'visibility', 'none');
+  } else {
+    map.setLayoutProperty('buffers-fill', 'visibility', 'visible');
+    map.setLayoutProperty('buffers-line', 'visibility', 'visible');
+    map.setFilter('buffers-fill', ['==', ['get', 'buffer_m'], bVal]);
+    map.setFilter('buffers-line', ['==', ['get', 'buffer_m'], bVal]);
+  }
+  document.getElementById('lblActiveBuffer').textContent = bVal === 0 ? 'Strict Boundary (0 km)' : `${bVal/1000} km Buffer`;
+}
+
+// Event Listeners
+function setupEventListeners() {
+  // Target Unit
+  document.getElementById('ctrlTargetUnit').addEventListener('click', (e) => {
+    if (e.target.dataset.unit) {
+      document.querySelectorAll('#ctrlTargetUnit .segment-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      STATE.unit = e.target.dataset.unit;
+      updateDashboard();
+    }
+  });
+
+  // Buffer
+  document.getElementById('ctrlBuffer').addEventListener('click', (e) => {
+    if (e.target.dataset.buffer) {
+      document.querySelectorAll('#ctrlBuffer .segment-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      STATE.buffer = e.target.dataset.buffer;
+      updateDashboard();
+    }
+  });
+
+  // Confidence Level
+  document.getElementById('ctrlConfidence').addEventListener('click', (e) => {
+    if (e.target.dataset.conf) {
+      document.querySelectorAll('#ctrlConfidence .segment-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      STATE.confidence = e.target.dataset.conf;
+      updateDashboard();
+    }
+  });
+
+  // Margin of Error Slider
+  const sliderMoe = document.getElementById('sliderMoe');
+  sliderMoe.addEventListener('input', (e) => {
+    STATE.moe = parseFloat(e.target.value) / 100.0;
+    document.getElementById('valMoe').textContent = `±${e.target.value}%`;
+    updateDashboard();
+  });
+
+  // Deff Slider
+  const sliderDeff = document.getElementById('sliderDeff');
+  sliderDeff.addEventListener('input', (e) => {
+    STATE.deff = parseFloat(e.target.value);
+    document.getElementById('valDeff').textContent = e.target.value;
+    updateDashboard();
+  });
+
+  // Non-Response Slider
+  const sliderNonResponse = document.getElementById('sliderNonResponse');
+  sliderNonResponse.addEventListener('input', (e) => {
+    STATE.nonResponse = parseFloat(e.target.value) / 100.0;
+    document.getElementById('valNonResponse').textContent = `${e.target.value}%`;
+    updateDashboard();
+  });
+
+  // Allocation Strategy
+  document.getElementById('ctrlAllocation').addEventListener('click', (e) => {
+    if (e.target.dataset.alloc) {
+      document.querySelectorAll('#ctrlAllocation .segment-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      STATE.allocation = e.target.dataset.alloc;
+      updateDashboard();
+    }
+  });
+
+  // Interviews per Day
+  document.getElementById('sliderInterviewsPerDay').addEventListener('input', (e) => {
+    STATE.interviewsPerDay = parseInt(e.target.value, 10);
+    document.getElementById('valInterviewsPerDay').textContent = e.target.value;
+    updateDashboard();
+  });
+
+  // Survey Days
+  document.getElementById('sliderSurveyDays').addEventListener('input', (e) => {
+    STATE.surveyDays = parseInt(e.target.value, 10);
+    document.getElementById('valSurveyDays').textContent = e.target.value;
+    updateDashboard();
+  });
+
+  // Focus Site Dropdown
+  document.getElementById('selectSiteFocus').addEventListener('change', (e) => {
+    selectSite(e.target.value);
+  });
+
+  // Export CSV
+  document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
+
+  // Print Brief
+  document.getElementById('btnPrintBrief').addEventListener('click', () => {
+    window.print();
+  });
+
+  // Reset Defaults
+  document.getElementById('btnResetDefaults').addEventListener('click', () => {
+    STATE.unit = 'households';
+    STATE.buffer = '1000';
+    STATE.confidence = '95';
+    STATE.moe = 0.05;
+    STATE.deff = 1.5;
+    STATE.nonResponse = 0.10;
+    STATE.allocation = 'independent';
+    STATE.interviewsPerDay = 4;
+    STATE.surveyDays = 14;
+    STATE.selectedSite = null;
+
+    document.querySelectorAll('#ctrlTargetUnit .segment-btn').forEach(b => b.classList.toggle('active', b.dataset.unit === 'households'));
+    document.querySelectorAll('#ctrlBuffer .segment-btn').forEach(b => b.classList.toggle('active', b.dataset.buffer === '1000'));
+    document.querySelectorAll('#ctrlConfidence .segment-btn').forEach(b => b.classList.toggle('active', b.dataset.conf === '95'));
+    document.querySelectorAll('#ctrlAllocation .segment-btn').forEach(b => b.classList.toggle('active', b.dataset.alloc === 'independent'));
+
+    document.getElementById('sliderMoe').value = 5.0;
+    document.getElementById('valMoe').textContent = '±5.0%';
+    document.getElementById('sliderDeff').value = 1.5;
+    document.getElementById('valDeff').textContent = '1.5';
+    document.getElementById('sliderNonResponse').value = 10;
+    document.getElementById('valNonResponse').textContent = '10%';
+    document.getElementById('sliderInterviewsPerDay').value = 4;
+    document.getElementById('valInterviewsPerDay').textContent = '4';
+    document.getElementById('sliderSurveyDays').value = 14;
+    document.getElementById('valSurveyDays').textContent = '14';
+    document.getElementById('selectSiteFocus').value = 'all';
+
+    selectSite('all');
+  });
+
+  // Basemap Switcher
+  document.getElementById('ctrlBasemap').addEventListener('click', (e) => {
+    if (e.target.dataset.style) {
+      document.querySelectorAll('#ctrlBasemap .segment-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      STATE.activeBasemap = e.target.dataset.style;
+      if (map) {
+        map.setStyle(BASEMAP_STYLES[STATE.activeBasemap]);
+        map.once('style.load', () => {
+          addMapLayers();
+        });
+      }
+    }
+  });
+
+  // Layer Toggles
+  document.getElementById('layerToggleSites').addEventListener('change', (e) => {
+    const v = e.target.checked ? 'visible' : 'none';
+    if (map && map.getLayer('sites-fill')) {
+      map.setLayoutProperty('sites-fill', 'visibility', v);
+      map.setLayoutProperty('sites-line', 'visibility', v);
+      map.setLayoutProperty('sites-labels', 'visibility', v);
+    }
+  });
+
+  document.getElementById('layerToggleBuffer').addEventListener('change', (e) => {
+    const v = e.target.checked ? 'visible' : 'none';
+    if (map && map.getLayer('buffers-fill')) {
+      map.setLayoutProperty('buffers-fill', 'visibility', v);
+      map.setLayoutProperty('buffers-line', 'visibility', v);
+    }
+  });
+
+  document.getElementById('layerToggleVillages').addEventListener('change', (e) => {
+    const v = e.target.checked ? 'visible' : 'none';
+    if (map && map.getLayer('villages-circle')) {
+      map.setLayoutProperty('villages-circle', 'visibility', v);
+    }
+    const showLabels = document.getElementById('layerToggleVillageLabels').checked;
+    if (map && map.getLayer('villages-labels')) {
+      map.setLayoutProperty('villages-labels', 'visibility', e.target.checked && showLabels ? 'visible' : 'none');
+    }
+  });
+
+  document.getElementById('layerToggleVillageLabels').addEventListener('change', (e) => {
+    const showVillages = document.getElementById('layerToggleVillages').checked;
+    const v = (e.target.checked && showVillages) ? 'visible' : 'none';
+    if (map && map.getLayer('villages-labels')) {
+      map.setLayoutProperty('villages-labels', 'visibility', v);
+    }
+  });
+
+  document.getElementById('layerToggleBuildings').addEventListener('change', (e) => {
+    const v = e.target.checked ? 'visible' : 'none';
+    if (map && map.getLayer('buildings-points')) {
+      map.setLayoutProperty('buildings-points', 'visibility', v);
+    }
+  });
+
+  document.getElementById('layerTogglePopgrid').addEventListener('change', (e) => {
+    const v = e.target.checked ? 'visible' : 'none';
+    if (map && map.getLayer('popgrid-heat')) {
+      map.setLayoutProperty('popgrid-heat', 'visibility', v);
+    }
+  });
+
+  // Popgrid COG Raster Layer Toggle
+  document.getElementById('layerTogglePopgridCog').addEventListener('change', (e) => {
+    const v = e.target.checked ? 'visible' : 'none';
+    if (map && map.getLayer('popgrid-cog-layer')) {
+      map.setLayoutProperty('popgrid-cog-layer', 'visibility', v);
+    }
+    const ctrl = document.getElementById('popgridCogControls');
+    if (ctrl) ctrl.style.display = e.target.checked ? 'block' : 'none';
+  });
+
+  // Popgrid COG Opacity Slider
+  document.getElementById('sliderCogOpacity').addEventListener('input', (e) => {
+    const val = parseInt(e.target.value, 10);
+    document.getElementById('valCogOpacity').textContent = `${val}%`;
+    if (map && map.getLayer('popgrid-cog-layer')) {
+      map.setPaintProperty('popgrid-cog-layer', 'raster-opacity', val / 100.0);
+    }
+  });
+}
+
+// Initial Boot
+window.addEventListener('DOMContentLoaded', () => {
+  setupEventListeners();
+  initMap();
+  updateDashboard();
+});
+</script>
+</body>
+</html>
